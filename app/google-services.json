@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "216926122109",
+    "firebase_url": "https://testgpslocation-72a43.firebaseio.com",
+    "project_id": "testgpslocation-72a43",
+    "storage_bucket": "testgpslocation-72a43.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:216926122109:android:7baf002345d505b2",
+        "android_client_info": {
+          "package_name": "ca.uqac.mobile.feet_tracker"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "216926122109-ka77kh8gutp6mr6rum9auklupojq3h3b.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD7hXt10SFEBi5Qs86jvOJEMm076UY1cTo"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
