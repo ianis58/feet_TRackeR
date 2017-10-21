@@ -5,11 +5,11 @@ Grâce à cela, nous serons en mesure de proposer une application GPS performant
 
 <h3>Liens utiles</h3>
 
-Kanban Trello
+<a href="https://trello.com/b/UF8aXIYf/8inf872-projet-plateformes-mobiles">Kanban Trello</a>
 
-Groupe Facebook
+<a href="https://www.facebook.com/groups/1388917304563037/">Groupe Facebook</a>
 
-Dépôt Github
+<a href="https://github.com/ianis58/feet_TRackeR">Dépôt Github</a>
 
 <h3>Membres de l'équipe</h3>
 Tremblay Sébastien
