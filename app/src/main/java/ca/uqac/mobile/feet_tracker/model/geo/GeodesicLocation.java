@@ -1,16 +1,29 @@
-package ca.uqac.mobile.feet_tracker;
+package ca.uqac.mobile.feet_tracker.model.geo;
 
 import com.google.firebase.database.Exclude;
 import com.google.firebase.database.ServerValue;
 
 import java.util.Map;
 
-class Location {
+public class GeodesicLocation {
 
     private String uid;
     private double latitude;
     private double longitude;
+    private double altitude;
     private Long date;
+
+    public GeodesicLocation(double lat, double lon, double alt) {
+        latitude = lat;
+        longitude = lon;
+        altitude = alt;
+    }
+    public GeodesicLocation(double lat, double lon) {
+        this(lat, lon, 0.0);
+    }
+    public GeodesicLocation() {
+        this(0.0, 0.0, 0.0);
+    }
 
     public double getLatitude() {
         return latitude;
@@ -28,10 +41,12 @@ class Location {
         this.longitude = longitude;
     }
 
-    Location(double lat, double lon) {
-        latitude = lat;
-        longitude = lon;
+    public double getAltitude() {
+        return altitude;
+    }
 
+    public void setAltitude(double altitude) {
+        this.altitude = altitude;
     }
 
     @Override
@@ -40,11 +55,11 @@ class Location {
             return true;
         }
 
-        if(!(obj instanceof Location)){
+        if(!(obj instanceof GeodesicLocation)){
             return false;
         }
 
-        Location location = (Location) obj;
+        GeodesicLocation location = (GeodesicLocation) obj;
 
         return this.getUid().equals(location.getUid());
     }
