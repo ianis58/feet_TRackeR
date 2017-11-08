@@ -51,10 +51,15 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="ca.uqac.mobile.feet_tracker.android.activities.tracker.TrackerActivity" />
         </activity>
-        <activity android:name=".android.activities.trainer.TrainerActivity"
+        <activity
+            android:name=".android.activities.trainer.TrainerActivity"
             android:label="@string/title_activity_trainer" />
-        <activity android:name=".android.activities.devtools.DevToolsActivity"
+        <activity
+            android:name=".android.activities.devtools.DevToolsActivity"
             android:label="@string/title_activity_dev_tools" />
+        <activity
+            android:name=".android.activities.trainer.RecordActivity"
+            android:label="feet TRaineR > recording activity" />
     </application>
 
 </manifest>
