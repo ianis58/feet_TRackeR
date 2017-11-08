@@ -10,8 +10,10 @@ public class BootReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        Intent i = new Intent(context, LocationTrackerService.class);
+        //TODO: Uncomment
+        /*Intent i = new Intent(context, LocationTrackerService.class);
         //Toast.makeText(context, "Starting sampling service...1", Toast.LENGTH_LONG).show();
-        context.startService(i);
+        context.startService(i);*/
+
     }
 }

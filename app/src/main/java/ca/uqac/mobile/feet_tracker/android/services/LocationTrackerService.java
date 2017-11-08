@@ -24,7 +24,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
 import ca.uqac.mobile.feet_tracker.R;
-import ca.uqac.mobile.feet_tracker.android.activities.MainActivity;
+import ca.uqac.mobile.feet_tracker.android.activities.splash.SplashActivity;
 import ca.uqac.mobile.feet_tracker.model.geo.GeodesicLocation;
 
 public class LocationTrackerService extends Service implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, com.google.android.gms.location.LocationListener {
@@ -188,7 +188,7 @@ public class LocationTrackerService extends Service implements GoogleApiClient.C
 
         // The PendingIntent to launch our activity if the user selects this notification
         PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
-                new Intent(this, MainActivity.class), 0);
+                new Intent(this, SplashActivity.class), 0);
 
         // Set the info for the views that show in the notification panel.
         Notification notification = new Notification.Builder(this)
