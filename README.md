@@ -17,5 +17,8 @@ Grâce à cela, nous serons en mesure de proposer une application GPS performant
 
 <h3>Membres de l'équipe</h3>
 Tremblay Sébastien
+
 Ragueneau Yann Klemens
+
 Rieuf Ianis
+
