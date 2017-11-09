@@ -72,7 +72,6 @@ public class MetricLocation {
         this.uid = uid;
     }
 
-
     public Map<String, String> getDate(){
         return ServerValue.TIMESTAMP;
     }

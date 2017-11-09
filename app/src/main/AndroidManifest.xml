@@ -60,6 +60,9 @@
         <activity
             android:name=".android.activities.trainer.RecordActivity"
             android:label="feet TRaineR > recording activity" />
+        <activity
+            android:name=".android.activities.login.LoginActivity"
+            android:label="feet TRackeR > login" />
     </application>
 
 </manifest>

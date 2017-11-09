@@ -9,7 +9,10 @@
     <Chronometer
         android:id="@+id/chronometerNewTrack"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:textAlignment="center"
+        android:textSize="65sp" />
 
     <Button
         android:id="@+id/btnEndRecordNewTrack"

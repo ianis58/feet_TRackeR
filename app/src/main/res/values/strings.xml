@@ -8,4 +8,7 @@
     <string name="title_activity_dev_tools">Developer tools</string>
     <string name="new_track">New track</string>
     <string name="end_record">End record</string>
+    <string name="login">Login</string>
+    <string name="hint_username">username</string>
+    <string name="btn_login">Login</string>
 </resources>

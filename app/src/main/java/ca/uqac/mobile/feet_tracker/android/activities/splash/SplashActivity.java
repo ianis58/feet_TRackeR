@@ -11,10 +11,8 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-
 import ca.uqac.mobile.feet_tracker.R;
+import ca.uqac.mobile.feet_tracker.android.activities.login.LoginActivity;
 import ca.uqac.mobile.feet_tracker.android.activities.tracker.TrackerActivity;
 import ca.uqac.mobile.feet_tracker.android.services.LocationTrackerService;
 
@@ -23,8 +21,8 @@ public class SplashActivity extends AppCompatActivity {
 
     private static final int FINE_LOCATION_PERMISSION_REQUEST_ID = 1;
 
-    FirebaseDatabase database;
-    DatabaseReference myRef;
+    //FirebaseDatabase database;
+    //DatabaseReference myRef;
 
     private void startLocationTracker() {
         Intent serviceIntent = new Intent(this, LocationTrackerService.class);
@@ -32,12 +30,12 @@ public class SplashActivity extends AppCompatActivity {
 
     }
 
-    private void launchTracker() {
-        //Wait 2 seconds before starting TrackerActivity (just to show the splash screen a bit)
+    private void launchLogin() {
+        //Wait 2 seconds before starting LoginActivity (just to show the splash screen a bit)
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
-                Intent intent = new Intent(SplashActivity.this, TrackerActivity.class);
+                Intent intent = new Intent(SplashActivity.this, LoginActivity.class);
                 startActivity(intent);
             }
         }, 2000);
@@ -49,7 +47,7 @@ public class SplashActivity extends AppCompatActivity {
 
     private void checkForPermissions() {
         if (hasGPSPermission()) {
-            launchTracker();
+            launchLogin();
         }
         else {
             if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
@@ -83,8 +81,8 @@ public class SplashActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
 
-        database = FirebaseDatabase.getInstance();
-        myRef = database.getReference("locations");
+        //database = FirebaseDatabase.getInstance();
+        //myRef = database.getReference("locations");
 
         checkForPermissions();
     }
@@ -96,7 +94,7 @@ public class SplashActivity extends AppCompatActivity {
         for (int i = 0; i < len; ++i) {
             if (Manifest.permission.ACCESS_FINE_LOCATION.equals(permissions[i])) {
                 if (grantResults[i] == PackageManager.PERMISSION_GRANTED) {
-                    launchTracker();
+                    launchLogin();
                 }
                 else {
                     new AlertDialog.Builder(this)
