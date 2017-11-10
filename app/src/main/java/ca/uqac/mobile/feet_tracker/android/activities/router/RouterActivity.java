@@ -1,5 +1,7 @@
 package ca.uqac.mobile.feet_tracker.android.activities.router;
 
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
@@ -12,30 +14,125 @@ import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.Places;
 import com.google.android.gms.location.places.ui.PlaceSelectionListener;
 import com.google.android.gms.location.places.ui.SupportPlaceAutocompleteFragment;
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.Cap;
+import com.google.android.gms.maps.model.JointType;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
 
 import ca.uqac.mobile.feet_tracker.R;
 
 public class RouterActivity extends FragmentActivity implements OnMapReadyCallback {
     private static final String TAG = RouterActivity.class.getSimpleName();
 
+    private static final float SINGLE_POINT_ZOOM = 13.0f;
+
+    //Google Map API attributes
     private GoogleMap mMap;
+
+    //Google Places API attributes
     private GoogleApiClient mClient;
+
+    //UI attributes
+    SupportMapFragment mapFragment;
+    SupportPlaceAutocompleteFragment placesFrom;
+    SupportPlaceAutocompleteFragment placesTo;
+
+    //Trajectory attributes
+    MarkerOptions markerFrom = new MarkerOptions();
+    MarkerOptions markerTo = new MarkerOptions();
+    PolylineOptions polyLine = new PolylineOptions();
+    CameraUpdate cameraUpdate;
+
+    LatLng fromPos;
+    LatLng toPos;
+
+    private void initializeMap() {
+        refreshMap();
+    }
+
+    private void refreshMap() {
+        /*
+        // Add a marker in Sydney and move the camera
+        LatLng sydney = new LatLng(-34, 151);
+        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
+
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+        */
+
+        if (mMap != null) {
+            mMap.clear();
+
+            if (fromPos != null) {
+                markerFrom.position(fromPos);
+                markerFrom.title(getResources().getString(R.string.router_from_hint));
+                mMap.addMarker(markerFrom);
+            }
+            if (toPos != null) {
+                markerTo.position(toPos);
+                markerTo.title(getResources().getString(R.string.router_to_hint));
+                mMap.addMarker(markerTo);
+            }
+
+            if (fromPos != null && toPos != null) {
+                polyLine = new PolylineOptions();
+                polyLine
+                        .add(fromPos)
+                        .add(toPos)
+                        .color(Color.BLUE)
+                        .geodesic(false)
+                        .clickable(false)
+                ;
+                mMap.addPolyline(polyLine);
+            }
+
+            if (fromPos != null && toPos != null) {
+                LatLngBounds bounds = LatLngBounds.builder()
+                        .include(fromPos)
+                        .include(toPos)
+                        .build();
+
+                cameraUpdate = CameraUpdateFactory.newLatLngBounds(bounds, 50);
+            }
+            else if (fromPos != null) {
+                cameraUpdate = CameraUpdateFactory.newLatLngZoom(fromPos, SINGLE_POINT_ZOOM);
+            }
+            else if (toPos != null) {
+                cameraUpdate = CameraUpdateFactory.newLatLngZoom(toPos, SINGLE_POINT_ZOOM);
+            }
+            else {
+                cameraUpdate = null;
+            }
+
+            if (cameraUpdate != null) {
+                mMap.moveCamera(cameraUpdate);
+            }
+
+        }
+
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_router);
 
+        mMap = null;
+        fromPos = null;
+        toPos = null;
+
         //Google map initialization
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
+
         mapFragment.getMapAsync(this);
 
         //Google Places initialization
@@ -45,7 +142,6 @@ public class RouterActivity extends FragmentActivity implements OnMapReadyCallba
                 //Not much for now...
             }
         };
-
         mClient = new GoogleApiClient
                 .Builder(this)
                 .addApi(Places.GEO_DATA_API)
@@ -53,19 +149,35 @@ public class RouterActivity extends FragmentActivity implements OnMapReadyCallba
                 .enableAutoManage(this, placesFailedListener)
                 .build();
 
-        SupportPlaceAutocompleteFragment placesFrom = (SupportPlaceAutocompleteFragment) getSupportFragmentManager().findFragmentById(R.id.places_fragment_from);
-        placesFrom.setHint("Point de départ");
+        placesFrom = (SupportPlaceAutocompleteFragment) getSupportFragmentManager().findFragmentById(R.id.places_fragment_from);
+        placesFrom.setHint(getResources().getString(R.string.router_from_hint));
 
         placesFrom.setOnPlaceSelectedListener(new PlaceSelectionListener() {
             @Override
             public void onPlaceSelected(Place place) {
-                final LatLng position = place.getLatLng();
-                mMap.moveCamera(CameraUpdateFactory.newLatLng(position));
+                fromPos = place.getLatLng();
+                refreshMap();
             }
 
             @Override
             public void onError(Status status) {
+                fromPos = null;
+            }
+        });
 
+        placesTo = (SupportPlaceAutocompleteFragment) getSupportFragmentManager().findFragmentById(R.id.places_fragment_to);
+        placesTo.setHint(getResources().getString(R.string.router_to_hint));
+
+        placesTo.setOnPlaceSelectedListener(new PlaceSelectionListener() {
+            @Override
+            public void onPlaceSelected(Place place) {
+                toPos = place.getLatLng();
+                refreshMap();
+            }
+
+            @Override
+            public void onError(Status status) {
+                toPos = null;
             }
         });
     }
@@ -83,10 +195,6 @@ public class RouterActivity extends FragmentActivity implements OnMapReadyCallba
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-
-        // Add a marker in Sydney and move the camera
-        LatLng sydney = new LatLng(-34, 151);
-        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+        initializeMap();
     }
 }

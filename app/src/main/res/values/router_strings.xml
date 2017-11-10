@@ -2,4 +2,6 @@
 <resources>
     <string name="router_activity_title">feet RouTeR</string>
 
+    <string name="router_from_hint">Point de départ</string>
+    <string name="router_to_hint">Destination</string>
 </resources>

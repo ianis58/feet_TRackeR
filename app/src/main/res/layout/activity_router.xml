@@ -5,19 +5,21 @@
     android:layout_height="match_parent"
     tools:context="ca.uqac.mobile.feet_tracker.android.activities.router.RouterActivity">
 
-    <fragment
-        android:id="@+id/map"
-        android:name="com.google.android.gms.maps.SupportMapFragment"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
-
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
 
         <android.support.v7.widget.CardView
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:layout_marginBottom="0dp"
+            android:layout_marginEnd="@dimen/router_place_picker_margin"
+            android:layout_marginLeft="@dimen/router_place_picker_margin"
+            android:layout_marginRight="@dimen/router_place_picker_margin"
+            android:layout_marginStart="@dimen/router_place_picker_margin"
+            android:layout_marginTop="@dimen/router_place_picker_margin"
+            map:cardCornerRadius="5dp">
 
             <fragment
                 android:id="@+id/places_fragment_from"
@@ -25,6 +27,31 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
         </android.support.v7.widget.CardView>
+
+        <android.support.v7.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginBottom="@dimen/router_place_picker_margin"
+            android:layout_marginEnd="@dimen/router_place_picker_margin"
+            android:layout_marginLeft="@dimen/router_place_picker_margin"
+            android:layout_marginRight="@dimen/router_place_picker_margin"
+            android:layout_marginStart="@dimen/router_place_picker_margin"
+            android:layout_marginTop="@dimen/router_place_picker_margin"
+            map:cardCornerRadius="5dp">
+
+            <fragment
+                android:id="@+id/places_fragment_to"
+                android:name="com.google.android.gms.location.places.ui.SupportPlaceAutocompleteFragment"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </android.support.v7.widget.CardView>
+
+        <fragment
+            android:id="@+id/map"
+            android:name="com.google.android.gms.maps.SupportMapFragment"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
     </LinearLayout>
 
 </RelativeLayout>
