@@ -13,16 +13,12 @@ import android.os.Bundle;
 
 import ca.uqac.mobile.feet_tracker.R;
 import ca.uqac.mobile.feet_tracker.android.activities.login.LoginActivity;
-import ca.uqac.mobile.feet_tracker.android.activities.tracker.TrackerActivity;
 import ca.uqac.mobile.feet_tracker.android.services.LocationTrackerService;
 
 public class SplashActivity extends AppCompatActivity {
     private static final String TAG = SplashActivity.class.getSimpleName();
 
     private static final int FINE_LOCATION_PERMISSION_REQUEST_ID = 1;
-
-    //FirebaseDatabase database;
-    //DatabaseReference myRef;
 
     private void startLocationTracker() {
         Intent serviceIntent = new Intent(this, LocationTrackerService.class);
@@ -54,8 +50,8 @@ public class SplashActivity extends AppCompatActivity {
                 //Afficher un message informant que l'accès au GPS est essentiel au fonctionnement de l'appli
                 AlertDialog.Builder alertBuilder = new AlertDialog.Builder(this);
                 alertBuilder.setCancelable(true);
-                alertBuilder.setTitle("Permission nécessaire");
-                alertBuilder.setMessage("L'accès à la position GPS précise est nécessaire pour le bon fonctionnement de l'application.");
+                alertBuilder.setTitle(R.string.splash_request_gps_title);
+                alertBuilder.setMessage(R.string.splash_request_gps_message);
 
                 alertBuilder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
 
@@ -80,9 +76,6 @@ public class SplashActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
-
-        //database = FirebaseDatabase.getInstance();
-        //myRef = database.getReference("locations");
 
         checkForPermissions();
     }

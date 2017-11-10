@@ -1,8 +1,17 @@
 package ca.uqac.mobile.feet_tracker.android.activities.router;
 
+import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.view.View;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.Places;
+import com.google.android.gms.location.places.ui.PlaceSelectionListener;
+import com.google.android.gms.location.places.ui.SupportPlaceAutocompleteFragment;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -13,17 +22,52 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import ca.uqac.mobile.feet_tracker.R;
 
 public class RouterActivity extends FragmentActivity implements OnMapReadyCallback {
+    private static final String TAG = RouterActivity.class.getSimpleName();
 
     private GoogleMap mMap;
+    private GoogleApiClient mClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_router);
+
+        //Google map initialization
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+        //Google Places initialization
+        GoogleApiClient.OnConnectionFailedListener placesFailedListener = new GoogleApiClient.OnConnectionFailedListener() {
+            @Override
+            public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+                //Not much for now...
+            }
+        };
+
+        mClient = new GoogleApiClient
+                .Builder(this)
+                .addApi(Places.GEO_DATA_API)
+                .addApi(Places.PLACE_DETECTION_API)
+                .enableAutoManage(this, placesFailedListener)
+                .build();
+
+        SupportPlaceAutocompleteFragment placesFrom = (SupportPlaceAutocompleteFragment) getSupportFragmentManager().findFragmentById(R.id.places_fragment_from);
+        placesFrom.setHint("Point de départ");
+
+        placesFrom.setOnPlaceSelectedListener(new PlaceSelectionListener() {
+            @Override
+            public void onPlaceSelected(Place place) {
+                final LatLng position = place.getLatLng();
+                mMap.moveCamera(CameraUpdateFactory.newLatLng(position));
+            }
+
+            @Override
+            public void onError(Status status) {
+
+            }
+        });
     }
 
 

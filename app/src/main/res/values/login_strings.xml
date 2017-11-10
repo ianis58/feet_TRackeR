@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- User interface -->
+    <string name="login_prompt">Login</string>
+    <string name="login_username_hint">username</string>
+    <string name="login_button">Connexion</string>
+
+    <!-- Messages -->
+    <string name="login_connection_error">Erreur de connexion...</string>
+</resources>

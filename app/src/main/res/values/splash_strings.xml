@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="splash_request_gps_title">Permission nécessaire</string>
+    <string name="splash_request_gps_message">L\'accès à la position GPS précise est nécessaire pour le bon fonctionnement de l\'application.</string>
+</resources>

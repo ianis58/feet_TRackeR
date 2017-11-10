@@ -6,5 +6,5 @@
         android:icon="@drawable/action_new_track"
         android:orderInCategory="100"
         app:showAsAction="always"
-        android:title="@string/new_track" />
+        android:title="@string/trainer_new_track" />
 </menu>

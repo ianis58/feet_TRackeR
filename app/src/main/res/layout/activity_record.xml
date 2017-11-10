@@ -19,5 +19,5 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
-        android:text="@string/end_record" />
+        android:text="@string/trainer_end_record" />
 </LinearLayout>

@@ -96,7 +96,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
             @Override
             public void onComplete(@NonNull Task<AuthResult> task) {
                 if(!task.isSuccessful()){
-                    Toast.makeText(LoginActivity.this, "Erreur de connexion...", Toast.LENGTH_LONG).show();
+                    Toast.makeText(LoginActivity.this, R.string.login_connection_error, Toast.LENGTH_LONG).show();
                 }
 
                 progressBarLogin.setVisibility(View.INVISIBLE);

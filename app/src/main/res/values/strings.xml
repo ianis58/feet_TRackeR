@@ -3,12 +3,4 @@
     <string name="local_service_started">PersistingLocationSamplingService started</string>
     <string name="local_service_label">Location Sampling is running</string>
     <string name="local_service_stopped">Le service de sampling de la position a été arrêté</string>
-    <string name="title_activity_trainer">feet TRaineR</string>
-    <string name="title_activity_router">feet RouTeR</string>
-    <string name="title_activity_dev_tools">Developer tools</string>
-    <string name="new_track">New track</string>
-    <string name="end_record">End record</string>
-    <string name="login">Login</string>
-    <string name="hint_username">username</string>
-    <string name="btn_login">Login</string>
 </resources>
