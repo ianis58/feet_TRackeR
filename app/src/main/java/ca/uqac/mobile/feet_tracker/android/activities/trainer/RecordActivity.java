@@ -1,6 +1,7 @@
 package ca.uqac.mobile.feet_tracker.android.activities.trainer;
 
 import android.content.Intent;
+import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -54,6 +55,7 @@ public class RecordActivity extends AppCompatActivity {
         startRecordNewTrack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                chronometerNewTrack.setBase(SystemClock.elapsedRealtime());
                 chronometerNewTrack.start();
 
                 Intent intent = new Intent(getBaseContext(), LocationTrackerService.class);
