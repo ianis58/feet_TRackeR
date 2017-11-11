@@ -15,9 +15,24 @@
         android:textSize="65sp" />
 
     <Button
+        android:id="@+id/btnStartRecordNewTrack"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:text="@string/start_record" />
+
+    <Button
         android:id="@+id/btnEndRecordNewTrack"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:text="@string/trainer_end_record" />
+
+    <EditText
+        android:id="@+id/etTrackTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:inputType="textPersonName"
+        android:text="Name" />
 </LinearLayout>

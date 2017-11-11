@@ -36,4 +36,21 @@ public class Segment {
     public Map<String, String> getDestinationDate(){
         return destination.getDate();
     }
+
+    public boolean addMetricLocation(MetricLocation metricLocation){
+        if(!this.isFilled()){
+            if(origin == null){
+                origin = metricLocation;
+            }
+            else{
+                destination = metricLocation;
+            }
+        }
+
+        return this.isFilled();
+    }
+
+    private boolean isFilled() {
+        return (origin != null && destination != null);
+    }
 }

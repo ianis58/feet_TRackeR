@@ -12,6 +12,7 @@ import android.location.*;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.widget.Toast;
@@ -20,6 +21,8 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -31,33 +34,24 @@ public class LocationTrackerService extends Service implements GoogleApiClient.C
     private NotificationManager mNM;
     private int NOTIFICATION = R.string.local_service_started;
 
-
     private GoogleApiClient mGoogleApiClient;
     private android.location.Location mLocation;
     private LocationManager locationManager;
     private LocationRequest mLocationRequest;
+    private String newTrackUid;
+    private int locationsCount;
 
     FirebaseDatabase database;
     DatabaseReference myRef;
+    FirebaseAuth.AuthStateListener authStateListener;
+    FirebaseUser firebaseUser;
 
-    private static int UPDATE_INTERVAL = 1000 * 15; // /< location update interval
-    private static int FASTEST_INTERVAL = 1000 * 15; // /< fastest location update interval
+    private int UPDATE_INTERVAL = 1000 * 5; // /< location update interval
+    private int FASTEST_INTERVAL = 1000 * 5; // /< fastest location update interval
 
     @Override
     public void onConnected(Bundle bundle) {
-        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
-        }
-
         startLocationUpdates();
-
         onLocationChanged(mLocation);
     }
 
@@ -83,12 +77,15 @@ public class LocationTrackerService extends Service implements GoogleApiClient.C
         if (mLocation != null) {
             double latitude = mLocation.getLatitude();
             double longitude = mLocation.getLongitude();
-            //Log.w(TAG, "latitude="+latitude+", longitude="+longitude);
-            GeodesicLocation loc = new GeodesicLocation(latitude, longitude);
-            myRef.push().setValue(loc);
+            double altitude = mLocation.getAltitude();
+
+            GeodesicLocation loc = new GeodesicLocation(locationsCount, latitude, longitude, altitude);
+            myRef.child(firebaseUser.getUid()).child(newTrackUid).push().setValue(loc);
+
+            locationsCount++;
 
         } else {
-            Toast.makeText(this, "Have you enabled location in settings?", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.error_accessing_location, Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -145,7 +142,9 @@ public class LocationTrackerService extends Service implements GoogleApiClient.C
         mNM = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
 
         database = FirebaseDatabase.getInstance();
-        myRef = database.getReference("locations");
+        myRef = database.getReference("tracks");
+
+        locationsCount = 0;
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
@@ -157,13 +156,34 @@ public class LocationTrackerService extends Service implements GoogleApiClient.C
         // Display a notification about us starting.  We put an icon in the status bar.
         //Toast.makeText(getApplicationContext(), "Starting sampling service...3", Toast.LENGTH_LONG).show();
         showNotification();
+
+        authStateListener = new FirebaseAuth.AuthStateListener() {
+            @Override
+            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
+                FirebaseUser user = firebaseAuth.getCurrentUser();
+                if (user != null) {
+                    firebaseUser = user;
+                }
+                else {
+                    stopSelf();
+                }
+            }
+        };
+        FirebaseAuth.getInstance().addAuthStateListener(authStateListener);
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.i("LocalService", "Received start id " + startId + ": " + intent);
-        //Toast.makeText(this, "Starting sampling service...2", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, R.string.local_service_started, Toast.LENGTH_LONG).show();
         mGoogleApiClient.connect();
+
+        if(intent != null){
+            newTrackUid = intent.getStringExtra("newTrackUid");
+        }
+        else {
+            stopSelf();
+        }
+
         return START_STICKY;
     }
 

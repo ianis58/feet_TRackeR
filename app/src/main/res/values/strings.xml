@@ -1,6 +1,20 @@
 <resources>
     <string name="app_name">feet TRackeR</string>
-    <string name="local_service_started">PersistingLocationSamplingService started</string>
-    <string name="local_service_label">Location Sampling is running</string>
+    <string name="facebook_app_id">1634589553264053</string>
+    <string name="fb_login_protocol_scheme">fb1634589553264053</string>
+
+    <string name="local_service_started">Le service de sampling de la position a été démarré</string>
+    <string name="local_service_label">Trajet en cours d\'enregistrement...</string>
     <string name="local_service_stopped">Le service de sampling de la position a été arrêté</string>
+    <string name="title_activity_trainer">feet TRaineR</string>
+    <string name="title_activity_router">feet RouTeR</string>
+    <string name="title_activity_dev_tools">Developer tools</string>
+    <string name="new_track">New track</string>
+    <string name="end_record">End record</string>
+    <string name="login">Login</string>
+    <string name="hint_username">username</string>
+    <string name="btn_login">Login</string>
+    <string name="start_record">Start Record</string>
+    <string name="error_accessing_location">Le GPS semble désactivé, merci de l\'activer...</string>
+
 </resources>
