@@ -28,6 +28,7 @@ import com.google.firebase.database.FirebaseDatabase;
 
 import ca.uqac.mobile.feet_tracker.R;
 import ca.uqac.mobile.feet_tracker.android.activities.splash.SplashActivity;
+import ca.uqac.mobile.feet_tracker.android.activities.trainer.RecordActivity;
 import ca.uqac.mobile.feet_tracker.model.geo.GeodesicLocation;
 
 public class LocationTrackerService extends Service implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, com.google.android.gms.location.LocationListener {
@@ -179,6 +180,8 @@ public class LocationTrackerService extends Service implements GoogleApiClient.C
 
         if(intent != null){
             newTrackUid = intent.getStringExtra("newTrackUid");
+            UPDATE_INTERVAL = intent.getIntExtra("samplingInterval", 5) * 1000;
+            FASTEST_INTERVAL = UPDATE_INTERVAL;
         }
         else {
             stopSelf();
@@ -206,9 +209,10 @@ public class LocationTrackerService extends Service implements GoogleApiClient.C
         // In this sample, we'll use the same text for the ticker and the expanded notification
         CharSequence text = getText(R.string.local_service_started);
 
+        Intent notifyIntent = new Intent(this, RecordActivity.class);
+        notifyIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         // The PendingIntent to launch our activity if the user selects this notification
-        PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
-                new Intent(this, SplashActivity.class), 0);
+        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notifyIntent, 0);
 
         // Set the info for the views that show in the notification panel.
         Notification notification = new Notification.Builder(this)

@@ -1,38 +1,67 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     tools:context="ca.uqac.mobile.feet_tracker.android.activities.trainer.RecordActivity">
 
+    <TextView
+        android:id="@+id/tvActivityTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10sp"
+        android:text="Enregistrement du trajet"
+        android:textAlignment="center"
+        android:textSize="30sp"
+        android:textStyle="bold" />
+
     <Chronometer
         android:id="@+id/chronometerNewTrack"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
+        android:layout_marginLeft="10sp"
+        android:layout_marginRight="10sp"
+        android:layout_marginTop="30sp"
         android:textAlignment="center"
         android:textSize="65sp" />
 
-    <Button
+    <ImageButton
         android:id="@+id/btnStartRecordNewTrack"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
-        android:text="@string/start_record" />
+        android:layout_marginTop="30sp"
+        android:src="@drawable/start_track_recording" />
 
-    <Button
+    <ImageButton
         android:id="@+id/btnEndRecordNewTrack"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
-        android:text="@string/trainer_end_record" />
+        android:layout_marginTop="30sp"
+        android:src="@drawable/stop_track_recording" />
 
-    <EditText
-        android:id="@+id/etTrackTitle"
+    <TextView
+        android:id="@+id/tvSamplingFrequencyLabel"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:ems="10"
-        android:inputType="textPersonName"
-        android:text="Name" />
+        android:layout_marginLeft="10sp"
+        android:layout_marginRight="10sp"
+        android:layout_marginTop="30sp"
+        android:text="Fréquence d'échantillonnage de la position : 6s" />
+
+    <SeekBar
+        android:id="@+id/seekBarSamplingFrequency"
+        style="@style/Widget.AppCompat.SeekBar.Discrete"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="60sp"
+        android:layout_marginRight="60sp"
+        android:layout_marginTop="20sp"
+        android:max="9"
+        android:progress="6" />
+
 </LinearLayout>

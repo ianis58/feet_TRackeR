@@ -1,6 +1,7 @@
 package ca.uqac.mobile.feet_tracker.android.activities.trainer;
 
 import android.content.Intent;
+import android.os.PersistableBundle;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
@@ -11,6 +12,9 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Chronometer;
 import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.SeekBar;
+import android.widget.TextView;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -19,15 +23,18 @@ import com.google.firebase.database.FirebaseDatabase;
 
 import ca.uqac.mobile.feet_tracker.R;
 import ca.uqac.mobile.feet_tracker.android.activities.login.LoginActivity;
+import ca.uqac.mobile.feet_tracker.android.activities.splash.SplashActivity;
 import ca.uqac.mobile.feet_tracker.android.services.LocationTrackerService;
 
 public class RecordActivity extends AppCompatActivity {
     private static final String TAG = RecordActivity.class.getSimpleName();
 
     private Chronometer chronometerNewTrack;
-    private Button endRecordNewTrack;
-    private Button startRecordNewTrack;
-    private EditText etTrackTitle;
+    private ImageButton endRecordNewTrack;
+    private ImageButton startRecordNewTrack;
+    private SeekBar seekBarSamplingFrequency;
+    private TextView tvSamplingFrequencyLabel;
+    private int SAMPLING_INTERVAL;
 
     private String newTrackUid;
 
@@ -35,6 +42,17 @@ public class RecordActivity extends AppCompatActivity {
     DatabaseReference myRef;
     FirebaseAuth.AuthStateListener authStateListener;
     FirebaseUser firebaseUser;
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState, PersistableBundle outPersistentState) {
+        super.onSaveInstanceState(outState, outPersistentState);
+        //outState.put
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,18 +66,26 @@ public class RecordActivity extends AppCompatActivity {
         setContentView(R.layout.activity_record);
 
         chronometerNewTrack = (Chronometer) findViewById(R.id.chronometerNewTrack);
-        startRecordNewTrack = (Button) findViewById(R.id.btnStartRecordNewTrack);
-        endRecordNewTrack = (Button) findViewById(R.id.btnEndRecordNewTrack);
-        etTrackTitle = (EditText) findViewById(R.id.etTrackTitle);
+        startRecordNewTrack = (ImageButton) findViewById(R.id.btnStartRecordNewTrack);
+        endRecordNewTrack = (ImageButton) findViewById(R.id.btnEndRecordNewTrack);
+        seekBarSamplingFrequency = (SeekBar) findViewById(R.id.seekBarSamplingFrequency);
+        tvSamplingFrequencyLabel = (TextView) findViewById(R.id.tvSamplingFrequencyLabel);
+
+        SAMPLING_INTERVAL = seekBarSamplingFrequency.getProgress();
 
         startRecordNewTrack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                seekBarSamplingFrequency.setEnabled(false);
+                startRecordNewTrack.setEnabled(false);
+
                 chronometerNewTrack.setBase(SystemClock.elapsedRealtime());
                 chronometerNewTrack.start();
 
                 Intent intent = new Intent(getBaseContext(), LocationTrackerService.class);
                 intent.putExtra("newTrackUid", newTrackUid);
+                intent.putExtra("samplingInterval", SAMPLING_INTERVAL);
+
                 startService(intent);
             }
         });
@@ -69,25 +95,29 @@ public class RecordActivity extends AppCompatActivity {
             public void onClick(View v) {
                 stopLocationTrackerService();
                 showStats();
+                finish();
             }
         });
 
-        etTrackTitle.addTextChangedListener(new TextWatcher() {
+        seekBarSamplingFrequency.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                if(!etTrackTitle.getText().toString().isEmpty()){
-                    myRef.child(firebaseUser.getUid()).child(newTrackUid).child("title").setValue(etTrackTitle.getText().toString());
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                SAMPLING_INTERVAL = seekBarSamplingFrequency.getProgress();
+                if(SAMPLING_INTERVAL < 2){
+                    SAMPLING_INTERVAL = 2;
+                    seekBarSamplingFrequency.setProgress(SAMPLING_INTERVAL);
                 }
+                tvSamplingFrequencyLabel.setText("Fréquence d'échantillonnage de la position : " + SAMPLING_INTERVAL + "s");
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
             }
         });
 
@@ -114,6 +144,9 @@ public class RecordActivity extends AppCompatActivity {
     }
 
     private void showStats() {
-
+        Intent intent = new Intent(RecordActivity.this, NewTrackStatsActivity.class);
+        intent.putExtra("newTrackUid", newTrackUid);
+        intent.putExtra("newTrackTime", SystemClock.elapsedRealtime() - chronometerNewTrack.getBase());
+        startActivity(intent);
     }
 }
