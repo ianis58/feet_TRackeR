@@ -71,13 +71,16 @@ public class RecordActivity extends AppCompatActivity {
         seekBarSamplingFrequency = (SeekBar) findViewById(R.id.seekBarSamplingFrequency);
         tvSamplingFrequencyLabel = (TextView) findViewById(R.id.tvSamplingFrequencyLabel);
 
+        endRecordNewTrack.setVisibility(View.GONE);
+
         SAMPLING_INTERVAL = seekBarSamplingFrequency.getProgress();
 
         startRecordNewTrack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 seekBarSamplingFrequency.setEnabled(false);
-                startRecordNewTrack.setEnabled(false);
+                startRecordNewTrack.setVisibility(View.GONE);
+                endRecordNewTrack.setVisibility(View.VISIBLE);
 
                 chronometerNewTrack.setBase(SystemClock.elapsedRealtime());
                 chronometerNewTrack.start();

@@ -5,7 +5,7 @@ android {
         config_sign_debug_feet_tracker {
             keyAlias 'debug_key'
             keyPassword 'feet_TRackeR_2017_debug'
-            storeFile file('C:/Users/Ianis/Desktop/AndroidStudioProjects/keystores/feet_TRackeR_keystore.jks')
+            storeFile file('feet_TRackeR_keystore.jks')
             storePassword 'feet_TRackeR_2017'
         }
     }
