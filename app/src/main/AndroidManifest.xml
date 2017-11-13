@@ -68,10 +68,10 @@
         </activity>
         <activity
             android:name=".android.activities.trainer.RecordActivity"
-            android:label="feet TRaineR > recording new track" />
+            android:label="@string/record_activity_title" />
         <activity
             android:name=".android.activities.login.LoginActivity"
-            android:label="feet TRackeR > login" />
+            android:label="@string/connection_activity_title" />
 
         <meta-data
             android:name="com.facebook.sdk.ApplicationId"

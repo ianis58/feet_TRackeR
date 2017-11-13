@@ -19,6 +19,7 @@ android {
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         signingConfig signingConfigs.config_sign_debug_feet_tracker
+        vectorDrawables.useSupportLibrary = true
     }
     buildTypes {
         release {

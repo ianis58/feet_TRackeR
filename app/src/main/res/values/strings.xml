@@ -16,5 +16,7 @@
     <string name="btn_login">Login</string>
     <string name="start_record">Start Record</string>
     <string name="error_accessing_location">Le GPS semble désactivé, merci de l\'activer...</string>
+    <string name="connection_activity_title">Connexion</string>
+    <string name="record_activity_title">Nouveau trajet</string>
 
 </resources>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="45dp"
+    android:background="@color/colorAccent">
+
+    <TextView
+        android:id="@+id/trackTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="15sp"
+        android:text="titre" />
+
+    <TextView
+        android:id="@+id/trackDuration"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_margin="15sp"
+        android:layout_toEndOf="@+id/trackLocationsCount"
+        android:layout_toRightOf="@+id/trackLocationsCount"
+        android:text="00:00:00" />
+
+    <TextView
+        android:id="@+id/trackLocationsCount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_margin="15sp"
+        android:layout_toEndOf="@+id/trackDate"
+        android:layout_toRightOf="@+id/trackDate"
+        android:text="10" />
+
+    <TextView
+        android:id="@+id/trackDate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_margin="15sp"
+        android:layout_toEndOf="@+id/trackTitle"
+        android:layout_toRightOf="@+id/trackTitle"
+        android:text="01/01/17" />
+</RelativeLayout>
