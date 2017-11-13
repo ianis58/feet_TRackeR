@@ -1,11 +1,10 @@
 package ca.uqac.mobile.feet_tracker.android.activities.router;
 
 import android.graphics.Color;
-import android.graphics.Paint;
+import android.graphics.PointF;
 import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
-import android.view.View;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -19,13 +18,13 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.Cap;
-import com.google.android.gms.maps.model.JointType;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
+
+import java.util.Random;
 
 import ca.uqac.mobile.feet_tracker.R;
 
@@ -58,6 +57,22 @@ public class RouterActivity extends FragmentActivity implements OnMapReadyCallba
         refreshMap();
     }
 
+    private LatLng getPseudoRandomLatLngAlongPath(double pct, double randomPct) {
+        final double deltaLon = toPos.longitude - fromPos.longitude;
+        final double deltaLat = toPos.latitude - fromPos.latitude;
+
+        final double preciseLon = fromPos.longitude + deltaLon * pct;
+        final double preciseLat = fromPos.latitude + deltaLat * pct;
+
+        final Random random = new Random();
+        final double randomDeltaLon = deltaLon * randomPct;
+        final double randomDeltaLat = deltaLat * randomPct;
+        final double randomLon = preciseLon + (random.nextDouble()-0.5) * (2*randomDeltaLon);
+        final double randomLat = preciseLat + (random.nextDouble()-0.5) * (2*randomDeltaLat);
+
+        return new LatLng(randomLat, randomLon);
+    }
+
     private void refreshMap() {
         /*
         // Add a marker in Sydney and move the camera
@@ -81,24 +96,40 @@ public class RouterActivity extends FragmentActivity implements OnMapReadyCallba
                 mMap.addMarker(markerTo);
             }
 
+            LatLngBounds bounds = null;
             if (fromPos != null && toPos != null) {
                 polyLine = new PolylineOptions();
                 polyLine
                         .add(fromPos)
-                        .add(toPos)
                         .color(Color.BLUE)
                         .geodesic(false)
                         .clickable(false)
                 ;
+
+                LatLngBounds.Builder boundsBuilder = LatLngBounds.builder();
+                boundsBuilder
+                        .include(fromPos)
+                        .include(toPos)
+                ;
+
+                //Add a few pseudo random points
+                final int segmentCount = 4;
+                final double segmentWidth = 1.0 / (segmentCount);
+                for (int i = 1; i < segmentCount; i++) {
+                    LatLng latLng = getPseudoRandomLatLngAlongPath(i * segmentWidth, segmentWidth);
+
+                    polyLine.add(latLng);
+                    boundsBuilder.include(latLng);
+                }
+
+                //Add target path
+                polyLine.add(toPos);
                 mMap.addPolyline(polyLine);
+
+                bounds = boundsBuilder.build();
             }
 
             if (fromPos != null && toPos != null) {
-                LatLngBounds bounds = LatLngBounds.builder()
-                        .include(fromPos)
-                        .include(toPos)
-                        .build();
-
                 cameraUpdate = CameraUpdateFactory.newLatLngBounds(bounds, 50);
             }
             else if (fromPos != null) {
@@ -164,6 +195,7 @@ public class RouterActivity extends FragmentActivity implements OnMapReadyCallba
                 fromPos = null;
             }
         });
+
 
         placesTo = (SupportPlaceAutocompleteFragment) getSupportFragmentManager().findFragmentById(R.id.places_fragment_to);
         placesTo.setHint(getResources().getString(R.string.router_to_hint));
