@@ -98,8 +98,6 @@ public class NewTrackStatsActivity extends AppCompatActivity {
                 myRef.child(firebaseUser.getUid()).child(newTrackUid).child("title").setValue(etNewTrackTitle.getText().toString());
                 myRef.child(firebaseUser.getUid()).child(newTrackUid).child("duration").setValue(newTrackTimeMillis/1000);
 
-                startActivity(new Intent(getBaseContext(), TrainerActivity.class));
-
                 finish();
             }
         });
