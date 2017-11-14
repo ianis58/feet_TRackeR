@@ -10,6 +10,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 
 
@@ -35,7 +36,7 @@ public class TrainerActivity extends AppCompatActivity {
     private TrackAdapter adapter;
 
     private FirebaseDatabase database;
-    private DatabaseReference myRef;
+    private DatabaseReference tracksRef;
     FirebaseAuth.AuthStateListener authStateListener;
     FirebaseUser firebaseUser;
     String userUid;
@@ -65,24 +66,34 @@ public class TrainerActivity extends AppCompatActivity {
         }
 
         database = FirebaseDatabase.getInstance();
-        myRef = database.getReference("tracks");
+        tracksRef = database.getReference("tracks");
 
-        authStateListener = new FirebaseAuth.AuthStateListener() {
-            @Override
-            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
-                FirebaseUser user = firebaseAuth.getCurrentUser();
-                if (user != null) {
-                    firebaseUser = user;
-                }
-                else {
-                    Intent intent = new Intent(TrainerActivity.this, LoginActivity.class);
-                    startActivity(intent);
-                    finish();
-                }
-            }
-        };
+        //Get firebase user
+        firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (firebaseUser != null) {
+            String tmpUserUid = firebaseUser.getUid();
+        }
 
-        FirebaseAuth.getInstance().addAuthStateListener(authStateListener);
+        if (firebaseUser == null) {
+            //If firebase user unavailable, try another method
+            authStateListener = new FirebaseAuth.AuthStateListener() {
+                @Override
+                public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
+                    FirebaseAuth.getInstance().removeAuthStateListener(this);
+
+                    FirebaseUser user = firebaseAuth.getCurrentUser();
+                    if (user != null) {
+                        firebaseUser = user;
+                    } else {
+                        Intent intent = new Intent(TrainerActivity.this, LoginActivity.class);
+                        startActivity(intent);
+                        finish();
+                    }
+                }
+            };
+
+            FirebaseAuth.getInstance().addAuthStateListener(authStateListener);
+        }
 
         recyclerViewTracksHistory = (RecyclerView) findViewById(R.id.recyclerViewTracksHistory);
 
@@ -95,22 +106,26 @@ public class TrainerActivity extends AppCompatActivity {
         adapter = new TrackAdapter();
         recyclerViewTracksHistory.setAdapter(adapter);//define the TrackAdapter as the adapter we want to use for our RecyclerView
 
-        FirebaseDatabase.getInstance().getReference().child("tracks").child(userUid)
+        tracksRef.child(userUid)
                 .addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(DataSnapshot dataSnapshot, String s) {
                 Track track = dataSnapshot.getValue(Track.class);
+                track.setUid(dataSnapshot.getKey());
                 adapter.addTrack(track);
             }
 
             @Override
             public void onChildChanged(DataSnapshot dataSnapshot, String s) {
-
+                Track track = dataSnapshot.getValue(Track.class);
+                track.setUid(dataSnapshot.getKey());
+                adapter.updateTrack(track);
             }
 
             @Override
             public void onChildRemoved(DataSnapshot dataSnapshot) {
                 Track track = dataSnapshot.getValue(Track.class);
+                track.setUid(dataSnapshot.getKey());
                 adapter.deleteTrack(track);
             }
 

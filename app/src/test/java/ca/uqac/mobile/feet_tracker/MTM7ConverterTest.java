@@ -5,7 +5,7 @@ import org.junit.Test;
 
 import ca.uqac.mobile.feet_tracker.model.geo.GeodesicLocation;
 import ca.uqac.mobile.feet_tracker.model.geo.MetricLocation;
-import ca.uqac.mobile.feet_tracker.model.tools.MTM7Converter;
+import ca.uqac.mobile.feet_tracker.tools.MTM7Converter;
 
 /**
  * Created by MeTaL125 on 2017-11-04.

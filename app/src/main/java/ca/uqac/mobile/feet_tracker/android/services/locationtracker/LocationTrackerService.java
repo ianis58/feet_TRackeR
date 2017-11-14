@@ -30,7 +30,7 @@ import ca.uqac.mobile.feet_tracker.R;
 import ca.uqac.mobile.feet_tracker.android.activities.trainer.RecordActivity;
 import ca.uqac.mobile.feet_tracker.model.geo.GeodesicLocation;
 import ca.uqac.mobile.feet_tracker.model.geo.MetricLocation;
-import ca.uqac.mobile.feet_tracker.model.tools.MTM7Converter;
+import ca.uqac.mobile.feet_tracker.tools.MTM7Converter;
 
 public class LocationTrackerService extends Service implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, com.google.android.gms.location.LocationListener {
     private NotificationManager mNM;

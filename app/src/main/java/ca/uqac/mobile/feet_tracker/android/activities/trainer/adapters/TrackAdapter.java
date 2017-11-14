@@ -1,5 +1,7 @@
 package ca.uqac.mobile.feet_tracker.android.activities.trainer.adapters;
 
+import android.content.Context;
+import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,6 +11,8 @@ import android.widget.TextView;
 import java.util.ArrayList;
 
 import ca.uqac.mobile.feet_tracker.R;
+import ca.uqac.mobile.feet_tracker.android.activities.trainer.NewTrackStatsActivity;
+import ca.uqac.mobile.feet_tracker.android.activities.trainer.RecordActivity;
 import ca.uqac.mobile.feet_tracker.model.geo.Track;
 
 public class TrackAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
@@ -27,9 +31,21 @@ public class TrackAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
 
     @Override
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
-        Track track = tracks.get(position);
+        final Track track = tracks.get(position);
 
         ((TrackViewHolder) holder).bind(track);
+
+        holder.itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                final Context context = v.getContext();
+
+                Intent intent = new Intent(context, NewTrackStatsActivity.class);
+                intent.putExtra("newTrackUid", track.getUid());
+                //intent.putExtra("newTrackTime", SystemClock.elapsedRealtime() - chronometerNewTrack.getBase());
+                context.startActivity(intent);
+            }
+        });
     }
 
     @Override
@@ -42,7 +58,7 @@ public class TrackAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         notifyDataSetChanged();
     }
 
-    public void deleteTrack(Track track){
+    public void deleteTrack(Track track) {
         int index = tracks.indexOf(track);
         tracks.remove(index);
         notifyItemRemoved(index);
@@ -53,7 +69,24 @@ public class TrackAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         notifyDataSetChanged();
     }
 
-    private class TrackViewHolder extends RecyclerView.ViewHolder{
+    public void updateTrack(Track track) {
+        //TODO: find a better solution (i.e. replace track ref in tracks)
+        if (track != null) {
+            for (Track t : tracks) {
+                if (t != null && t.getUid() != null) {
+                    if (t.getUid().equals(track.getUid())) {
+                        t.setDuration(track.getDuration());
+                        t.setTitle(track.getTitle());
+
+                        notifyDataSetChanged();
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    private class TrackViewHolder extends RecyclerView.ViewHolder {
 
         private TextView title;
         private TextView duration;
@@ -68,9 +101,11 @@ public class TrackAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
             date = (TextView) itemView.findViewById(R.id.trackDate);
         }
 
+
+
         void bind(Track track){
             title.setText(track.getTitle());
-            duration.setText(track.getDuration().toString());
+            duration.setText(track.getDuration() != null ? track.getDuration().toString() : "");
         }
     }
 }

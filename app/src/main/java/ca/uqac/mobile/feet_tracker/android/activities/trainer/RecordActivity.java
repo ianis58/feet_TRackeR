@@ -17,6 +17,9 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import ca.uqac.mobile.feet_tracker.R;
 import ca.uqac.mobile.feet_tracker.android.activities.login.LoginActivity;
 import ca.uqac.mobile.feet_tracker.android.services.locationtracker.LocationTrackerService;
@@ -34,7 +37,7 @@ public class RecordActivity extends AppCompatActivity {
     private String newTrackUid;
 
     FirebaseDatabase database;
-    DatabaseReference myRef;
+    DatabaseReference tracksRef;
     FirebaseAuth.AuthStateListener authStateListener;
     FirebaseUser firebaseUser;
 
@@ -54,9 +57,7 @@ public class RecordActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         database = FirebaseDatabase.getInstance();
-        myRef = database.getReference("tracks");
-
-        newTrackUid = myRef.push().getKey();
+        tracksRef = database.getReference("tracks");
 
         setContentView(R.layout.activity_record);
 
@@ -80,6 +81,22 @@ public class RecordActivity extends AppCompatActivity {
                 chronometerNewTrack.setBase(SystemClock.elapsedRealtime());
                 chronometerNewTrack.start();
 
+                //Find today's formated date
+                Date today = new Date();
+                SimpleDateFormat formatYMD = new SimpleDateFormat("YYYY-MM-dd");
+                String formatted = formatYMD.format(today);
+
+                //Create a new track
+                DatabaseReference newTrack = tracksRef.child(firebaseUser.getUid()).push();
+                newTrackUid = newTrack.getKey();
+
+                //Define some starting / default values
+                //Default track title
+                newTrack.child("title").setValue(String.format("Parcours du %s", formatted));
+                //Starting duration: 0
+                newTrack.child("duration").setValue(0);
+
+                //TODO: Bind service instead of start
                 Intent intent = new Intent(getBaseContext(), LocationTrackerService.class);
                 intent.putExtra("newTrackUid", newTrackUid);
                 intent.putExtra("samplingInterval", SAMPLING_INTERVAL);
@@ -92,6 +109,11 @@ public class RecordActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 stopLocationTrackerService();
+
+                //Update track's real duration
+                long durationMillis = SystemClock.elapsedRealtime() - chronometerNewTrack.getBase();
+                tracksRef.child(firebaseUser.getUid()).child(newTrackUid).child("duration").setValue(durationMillis/1000);
+
                 showStats();
                 finish();
             }
@@ -137,6 +159,7 @@ public class RecordActivity extends AppCompatActivity {
     }
 
     private void stopLocationTrackerService() {
+        //TODO: Unbind instead of stop
         stopService(new Intent(this, LocationTrackerService.class));
         chronometerNewTrack.stop();
     }
@@ -144,7 +167,7 @@ public class RecordActivity extends AppCompatActivity {
     private void showStats() {
         Intent intent = new Intent(RecordActivity.this, NewTrackStatsActivity.class);
         intent.putExtra("newTrackUid", newTrackUid);
-        intent.putExtra("newTrackTime", SystemClock.elapsedRealtime() - chronometerNewTrack.getBase());
+        //intent.putExtra("newTrackTime", SystemClock.elapsedRealtime() - chronometerNewTrack.getBase());
         startActivity(intent);
     }
 }
