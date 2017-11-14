@@ -1,12 +1,12 @@
 package ca.uqac.mobile.feet_tracker.model.geo;
 
-import java.util.List;
+import java.util.HashMap;
 
 public class Track {
     private String uid;
     private String title;
     private Long duration;
-    private List<GeodesicLocation> locations;
+    private HashMap<String,GeodesicLocation> locations;
 
     public Track() {
         //
@@ -18,16 +18,20 @@ public class Track {
         this.duration = duration;
     }
 
-    public void addLocation(GeodesicLocation loc){
-        locations.add(loc);
+    public void addLocation(String k, GeodesicLocation loc){
+        locations.put(k, loc);
     }
 
     public int getLocationsCount(){
         return locations.size();
     }
 
-    public List<GeodesicLocation> getLocations(){
+    public HashMap<String,GeodesicLocation> getLocations(){
         return locations;
+    }
+
+    public void setLocations(HashMap<String, GeodesicLocation> locations) {
+        this.locations = locations;
     }
 
     public String getUid() {

@@ -81,7 +81,7 @@ public class LocationTrackerService extends Service implements GoogleApiClient.C
             double altitude = mLocation.getAltitude();
 
             GeodesicLocation loc = new GeodesicLocation(locationsCount, latitude, longitude, altitude);
-            myRef.child(firebaseUser.getUid()).child(newTrackUid).push().setValue(loc);
+            myRef.child(firebaseUser.getUid()).child(newTrackUid).child("locations").push().setValue(loc);
 
             locationsCount++;
 

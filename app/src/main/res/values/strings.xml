@@ -18,5 +18,6 @@
     <string name="error_accessing_location">Le GPS semble désactivé, merci de l\'activer...</string>
     <string name="connection_activity_title">Connexion</string>
     <string name="record_activity_title">Nouveau trajet</string>
+    <string name="new_track_stats_activity_title">Résumé</string>
 
 </resources>
