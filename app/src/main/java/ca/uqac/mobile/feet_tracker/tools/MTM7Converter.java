@@ -1,4 +1,4 @@
-package ca.uqac.mobile.feet_tracker.model.tools;
+package ca.uqac.mobile.feet_tracker.tools;
 
 import ca.uqac.mobile.feet_tracker.model.geo.GeodesicLocation;
 import ca.uqac.mobile.feet_tracker.model.geo.MetricLocation;

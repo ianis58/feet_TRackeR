@@ -13,7 +13,7 @@ import android.os.Bundle;
 
 import ca.uqac.mobile.feet_tracker.R;
 import ca.uqac.mobile.feet_tracker.android.activities.login.LoginActivity;
-import ca.uqac.mobile.feet_tracker.android.services.LocationTrackerService;
+import ca.uqac.mobile.feet_tracker.android.services.locationtracker.LocationTrackerService;
 
 public class SplashActivity extends AppCompatActivity {
     private static final String TAG = SplashActivity.class.getSimpleName();

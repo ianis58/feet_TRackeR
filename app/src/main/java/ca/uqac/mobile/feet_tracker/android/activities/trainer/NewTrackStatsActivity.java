@@ -18,12 +18,11 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 import ca.uqac.mobile.feet_tracker.R;
 import ca.uqac.mobile.feet_tracker.android.activities.login.LoginActivity;
+import ca.uqac.mobile.feet_tracker.model.geo.Track;
 
 public class NewTrackStatsActivity extends AppCompatActivity {
 
@@ -38,70 +37,125 @@ public class NewTrackStatsActivity extends AppCompatActivity {
     private String newTrackTimeString;
 
     private FirebaseDatabase database;
-    private DatabaseReference myRef;
+    private DatabaseReference tracksRef;
+    private DatabaseReference currentTrackRef;
     FirebaseAuth.AuthStateListener authStateListener;
     FirebaseUser firebaseUser;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        //Init UI components
         setContentView(R.layout.activity_new_track_stats);
-
-        database = FirebaseDatabase.getInstance();
-        myRef = database.getReference("tracks");
-
-
-        authStateListener = new FirebaseAuth.AuthStateListener() {
-            @Override
-            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
-                FirebaseUser user = firebaseAuth.getCurrentUser();
-                if (user != null) {
-                    firebaseUser = user;
-                }
-                else {
-                    Intent intent = new Intent(NewTrackStatsActivity.this, LoginActivity.class);
-                    startActivity(intent);
-                    finish();
-                }
-            }
-        };
-        FirebaseAuth.getInstance().addAuthStateListener(authStateListener);
-
         etNewTrackTitle = (EditText) findViewById(R.id.etNewTrackTitle);
         tvTrackDuration = (TextView) findViewById(R.id.tvTrackDuration);
         tvTrackUid = (TextView) findViewById(R.id.tvTrackUid);
         btnTerminer = (Button) findViewById(R.id.btnTerminer);
 
-        Intent i = getIntent();
+        //Init temporary data
+        etNewTrackTitle.setText("");
+        tvTrackDuration.setText("");
+        etNewTrackTitle.setEnabled(false);
+        btnTerminer.setEnabled(false);
 
-        if(i != null){
-            newTrackUid = i.getStringExtra("newTrackUid");
+        Intent intent = getIntent();
+
+        if(intent != null){
+            newTrackUid = intent.getStringExtra("newTrackUid");
             tvTrackUid.setText(newTrackUid);
 
-            newTrackTimeMillis = i.getLongExtra("newTrackTime", 0);
-
-            newTrackTimeString = String.format("%02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(newTrackTimeMillis),
-                    TimeUnit.MILLISECONDS.toMinutes(newTrackTimeMillis) % TimeUnit.HOURS.toMinutes(1),
-                    TimeUnit.MILLISECONDS.toSeconds(newTrackTimeMillis) % TimeUnit.MINUTES.toSeconds(1));
-
-            tvTrackDuration.setText(newTrackTimeString);
+            //newTrackTimeMillis = i.getLongExtra("newTrackTime", 0);
         }
         else{
+            newTrackUid = "";
             Toast.makeText(getBaseContext(), "Pas d'uid pour le parcours...", Toast.LENGTH_LONG).show();
             finish();
+            return;
         }
 
+        //Init database
+        database = FirebaseDatabase.getInstance();
+        tracksRef = database.getReference("tracks");
+
+        //Try to fetch user
+        firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (firebaseUser == null) {
+            //Couldn't get the user, try to get it otherwise
+            authStateListener = new FirebaseAuth.AuthStateListener() {
+                @Override
+                public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
+                    FirebaseAuth.getInstance().removeAuthStateListener(this);
+                    FirebaseUser user = firebaseAuth.getCurrentUser();
+                    if (user != null) {
+                        //OK we found the connected user
+                        firebaseUser = user;
+                        //We're now ready to fetch track
+                        fetchTrackData();
+                    } else {
+                        Intent intent = new Intent(NewTrackStatsActivity.this, LoginActivity.class);
+                        startActivity(intent);
+                        finish();
+                    }
+                }
+            };
+            FirebaseAuth.getInstance().addAuthStateListener(authStateListener);
+        }
+        else {
+            //OK we already have user, fetch Track right away
+            fetchTrackData();
+        }
 
         btnTerminer.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                myRef.child(firebaseUser.getUid()).child(newTrackUid).child("title").setValue(etNewTrackTitle.getText().toString());
-                myRef.child(firebaseUser.getUid()).child(newTrackUid).child("duration").setValue(newTrackTimeMillis/1000);
+                //tracksRef.child(firebaseUser.getUid()).child(newTrackUid).child("title").setValue(etNewTrackTitle.getText().toString());
+                //tracksRef.child(firebaseUser.getUid()).child(newTrackUid).child("duration").setValue(newTrackTimeMillis/1000);
+
+                //Update title
+                currentTrackRef.child("title").setValue(etNewTrackTitle.getText().toString());
 
                 finish();
             }
         });
 
+    }
+
+    private void fetchTrackData() {
+        //Ensure firebaseUser is valid
+        if (firebaseUser != null && !"".equals(newTrackUid)) {
+            //Find current track ref
+            currentTrackRef = tracksRef.child(firebaseUser.getUid()).child(newTrackUid);
+
+            //Register a callback to fetch data
+            currentTrackRef.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    currentTrackRef.removeEventListener(this);
+
+                    Track track = dataSnapshot.getValue(Track.class);
+
+                    newTrackTimeMillis = track.getDuration() * 1000;
+
+                    newTrackTimeString = String.format("%02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(newTrackTimeMillis),
+                            TimeUnit.MILLISECONDS.toMinutes(newTrackTimeMillis) % TimeUnit.HOURS.toMinutes(1),
+                            TimeUnit.MILLISECONDS.toSeconds(newTrackTimeMillis) % TimeUnit.MINUTES.toSeconds(1));
+
+                    etNewTrackTitle.setText(track.getTitle());
+                    tvTrackDuration.setText(newTrackTimeString);
+
+                    //OK we can enable title edit and update button
+                    etNewTrackTitle.setEnabled(true);
+                    btnTerminer.setEnabled(true);
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+                    currentTrackRef.removeEventListener(this);
+                    Toast.makeText(getBaseContext(), "Impossible de charger les informations de la scéance.", Toast.LENGTH_LONG).show();
+                }
+            });
+        }
     }
 
 

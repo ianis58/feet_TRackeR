@@ -1,10 +1,15 @@
 package ca.uqac.mobile.feet_tracker.android.activities.router;
 
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.graphics.Color;
-import android.graphics.PointF;
+import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -20,21 +25,30 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
-import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.util.Random;
 
 import ca.uqac.mobile.feet_tracker.R;
+import ca.uqac.mobile.feet_tracker.android.services.locationtracker.LocationTrackerBinder;
+import ca.uqac.mobile.feet_tracker.android.services.locationtracker.LocationTrackerListener;
+import ca.uqac.mobile.feet_tracker.android.services.locationtracker.LocationTrackerService;
+import ca.uqac.mobile.feet_tracker.model.geo.GeodesicLocation;
 
 public class RouterActivity extends FragmentActivity implements OnMapReadyCallback {
     private static final String TAG = RouterActivity.class.getSimpleName();
 
     private static final float SINGLE_POINT_ZOOM = 13.0f;
 
+    //LocationTracker service attributes
+    LocationTrackerService locationTracker;
+    LocationTrackerListener locationTrackerListener;
+
     //Google Map API attributes
     private GoogleMap mMap;
+
+    private LatLng mInitialMapPos = null;
 
     //Google Places API attributes
     private GoogleApiClient mClient;
@@ -53,6 +67,64 @@ public class RouterActivity extends FragmentActivity implements OnMapReadyCallba
     LatLng fromPos;
     LatLng toPos;
 
+    private void initFirstMapLocation(GeodesicLocation geodesicLocation) {
+        if (mInitialMapPos == null && geodesicLocation != null) {
+            mInitialMapPos = new LatLng(geodesicLocation.getLatitude(), geodesicLocation.getLongitude());
+
+            fromPos = mInitialMapPos;
+            placesFrom.setText(getString(R.string.router_actuel_location));
+
+            refreshMap();
+
+            LatLngBounds bounds = new LatLngBounds.Builder().include(mInitialMapPos).build();
+
+            placesFrom.setBoundsBias(bounds);
+            placesTo.setBoundsBias(bounds);
+        }
+    }
+
+    private void initializeTracker() {
+        locationTrackerListener = new LocationTrackerListener() {
+            @Override
+            public void onLocationChanged(GeodesicLocation geodesicLocation) {
+                updateTrackerPos(geodesicLocation);
+            }
+        };
+
+        Intent locationTrackerIntent = new Intent(this, LocationTrackerService.class);
+        bindService(locationTrackerIntent, new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName name, IBinder service) {
+                LocationTrackerBinder binder = (LocationTrackerBinder) service;
+
+                if (binder != null) {
+                    locationTracker = binder.getService();
+
+                    if (locationTracker != null) {
+                        locationTracker.registerListener(locationTrackerListener);
+
+                        initFirstMapLocation(locationTracker.getGeodesicLocation());
+                    }
+                    else {
+                        Log.e(TAG, getString(R.string.router_err_binder_getservice));
+                    }
+                }
+            }
+
+            @Override
+            public void onServiceDisconnected(ComponentName name) {
+                locationTracker = null;
+                //Reconnect
+                initializeTracker();
+            }
+        }, Context.BIND_AUTO_CREATE);
+    }
+
+    private void updateTrackerPos(GeodesicLocation geodesicLocation) {
+        initFirstMapLocation(geodesicLocation);
+        //TODO: déplacer le marqueur de la position actuelle
+    }
+
     private void initializeMap() {
         refreshMap();
     }
@@ -60,13 +132,14 @@ public class RouterActivity extends FragmentActivity implements OnMapReadyCallba
     private LatLng getPseudoRandomLatLngAlongPath(double pct, double randomPct) {
         final double deltaLon = toPos.longitude - fromPos.longitude;
         final double deltaLat = toPos.latitude - fromPos.latitude;
+        final double delta = Math.sqrt(deltaLon*deltaLon+deltaLat*deltaLat);
 
         final double preciseLon = fromPos.longitude + deltaLon * pct;
         final double preciseLat = fromPos.latitude + deltaLat * pct;
 
         final Random random = new Random();
-        final double randomDeltaLon = deltaLon * randomPct;
-        final double randomDeltaLat = deltaLat * randomPct;
+        final double randomDeltaLon = delta * randomPct;
+        final double randomDeltaLat = delta * randomPct;
         final double randomLon = preciseLon + (random.nextDouble()-0.5) * (2*randomDeltaLon);
         final double randomLat = preciseLat + (random.nextDouble()-0.5) * (2*randomDeltaLat);
 
@@ -116,7 +189,7 @@ public class RouterActivity extends FragmentActivity implements OnMapReadyCallba
                 final int segmentCount = 4;
                 final double segmentWidth = 1.0 / (segmentCount);
                 for (int i = 1; i < segmentCount; i++) {
-                    LatLng latLng = getPseudoRandomLatLngAlongPath(i * segmentWidth, segmentWidth);
+                    LatLng latLng = getPseudoRandomLatLngAlongPath(i * segmentWidth, segmentWidth/2);
 
                     polyLine.add(latLng);
                     boundsBuilder.include(latLng);
@@ -138,6 +211,9 @@ public class RouterActivity extends FragmentActivity implements OnMapReadyCallba
             else if (toPos != null) {
                 cameraUpdate = CameraUpdateFactory.newLatLngZoom(toPos, SINGLE_POINT_ZOOM);
             }
+            else if (mInitialMapPos != null) {
+                cameraUpdate = CameraUpdateFactory.newLatLngZoom(mInitialMapPos, SINGLE_POINT_ZOOM);
+            }
             else {
                 cameraUpdate = null;
             }
@@ -158,6 +234,8 @@ public class RouterActivity extends FragmentActivity implements OnMapReadyCallba
         mMap = null;
         fromPos = null;
         toPos = null;
+
+        initializeTracker();
 
         //Google map initialization
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
@@ -214,6 +292,21 @@ public class RouterActivity extends FragmentActivity implements OnMapReadyCallba
         });
     }
 
+    @Override
+    protected void onResume() {
+        if (locationTracker != null) {
+            locationTracker.registerListener(locationTrackerListener);
+        }
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        if (locationTracker != null) {
+            locationTracker.unregisterListener(locationTrackerListener);
+        }
+        super.onPause();
+    }
 
     /**
      * Manipulates the map once available.

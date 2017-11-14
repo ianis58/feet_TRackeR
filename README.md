@@ -1,21 +1,23 @@
-<h2>feet TRackeR</h2>
-<h3>Description du projet</h3>
-feet TRackeR (TRaineR & RouTeR) est un projet visant à proposer une cartographie piétonne collaborative en relevant les positions des marcheurs quand on détecte qu'ils sont en déplacement.
+## feet TRackeR
+### Description du projet
+feet TRackeR (TRaineR + RouTeR) est un projet visant à proposer une cartographie piétonne collaborative en relevant les positions des marcheurs quand on détecte qu'ils sont en déplacement.
 Grâce à cela, nous serons en mesure de proposer une application GPS performante à destination des piétons.
 
-<h3>Liens utiles</h3>
+### Liens utiles
 
-<a target="_blank" href="https://trello.com/b/UF8aXIYf/8inf872-projet-plateformes-mobiles">Kanban Trello</a>
+[Kanban Trello](https://trello.com/b/UF8aXIYf/8inf872-projet-plateformes-mobiles)
 
-<a target="_blank" href="https://www.facebook.com/groups/1388917304563037/">Groupe Facebook</a>
+[Groupe Facebook](https://www.facebook.com/groups/1388917304563037/)
 
-<a target="_blank" href="https://github.com/ianis58/feet_TRackeR">Dépôt Github</a>
+[Dépôt Github](https://github.com/ianis58/feet_TRackeR)
 
-<a target="_blank" href="https://console.firebase.google.com/project/feet-tracker/overview">Firebase</a>
+[Firebase](https://console.firebase.google.com/project/feet-tracker/overview)
 
-<a target="_blank" href="https://drive.google.com/drive/folders/0B6cTbaFxcgwrUjVQVm1aNWdPdFU">Dossier partagé Google Drive</a>
+[Projet Facebook Developers](https://developers.facebook.com/apps/1634589553264053/dashboard/)
 
-<h3>Membres de l'équipe</h3>
+[Dossier partagé Google Drive](https://drive.google.com/drive/folders/0B6cTbaFxcgwrUjVQVm1aNWdPdFU)
+
+### Membres de l'équipe
 Tremblay Sébastien
 
 Ragueneau Yann Klemens

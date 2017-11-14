@@ -5,7 +5,7 @@ import org.junit.Test;
 
 import ca.uqac.mobile.feet_tracker.model.geo.GeodesicLocation;
 import ca.uqac.mobile.feet_tracker.model.geo.MetricLocation;
-import ca.uqac.mobile.feet_tracker.model.tools.MTM7Converter;
+import ca.uqac.mobile.feet_tracker.tools.MTM7Converter;
 
 /**
  * Created by MeTaL125 on 2017-11-04.
@@ -14,7 +14,7 @@ import ca.uqac.mobile.feet_tracker.model.tools.MTM7Converter;
 public class MTM7ConverterTest {
     @Test
     public void testGeodesicToMetric() {
-        GeodesicLocation geodesic = new GeodesicLocation(48.5, -71.0, 150);
+        GeodesicLocation geodesic = new GeodesicLocation(1/*TODO: enlever ce param*/,48.5, -71.0, 150);
         MetricLocation metric = new MetricLocation();
 
         MTM7Converter.geodesicToMetric(geodesic, metric);

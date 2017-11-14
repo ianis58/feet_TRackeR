@@ -24,7 +24,7 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".android.services.LocationTrackerService" />
+        <service android:name=".android.services.locationtracker.LocationTrackerService" />
 
         <receiver android:name=".android.receivers.BootReceiver">
             <intent-filter>
@@ -95,7 +95,7 @@
         </activity>
         <activity
             android:name=".android.activities.trainer.NewTrackStatsActivity"
-            android:label="feet TRaineR > new track stats" />
+            android:label="@string/new_track_stats_activity_title" />
     </application>
 
 </manifest>

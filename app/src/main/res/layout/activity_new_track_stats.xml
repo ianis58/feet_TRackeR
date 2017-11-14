@@ -83,7 +83,7 @@
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="30sp"
             android:hapticFeedbackEnabled="true"
-            android:text="Terminer" />
+            android:text="Modifier" />
 
     </LinearLayout>
 
