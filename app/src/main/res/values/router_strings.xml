@@ -4,4 +4,6 @@
 
     <string name="router_from_hint">Point de départ</string>
     <string name="router_to_hint">Destination</string>
+    <string name="router_actuel_location">Position actuelle</string>
+    <string name="router_err_binder_getservice">Error initializing tracker, tracker Binder ok, but no service.</string>
 </resources>
