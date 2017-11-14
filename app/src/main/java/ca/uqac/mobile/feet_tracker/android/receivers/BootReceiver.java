@@ -4,8 +4,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
-import ca.uqac.mobile.feet_tracker.android.services.LocationTrackerService;
-
 public class BootReceiver extends BroadcastReceiver {
 
     @Override

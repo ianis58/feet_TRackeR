@@ -6,12 +6,8 @@ import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.view.View;
-import android.widget.Button;
 import android.widget.Chronometer;
-import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -23,8 +19,7 @@ import com.google.firebase.database.FirebaseDatabase;
 
 import ca.uqac.mobile.feet_tracker.R;
 import ca.uqac.mobile.feet_tracker.android.activities.login.LoginActivity;
-import ca.uqac.mobile.feet_tracker.android.activities.splash.SplashActivity;
-import ca.uqac.mobile.feet_tracker.android.services.LocationTrackerService;
+import ca.uqac.mobile.feet_tracker.android.services.locationtracker.LocationTrackerService;
 
 public class RecordActivity extends AppCompatActivity {
     private static final String TAG = RecordActivity.class.getSimpleName();

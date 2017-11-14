@@ -24,7 +24,7 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".android.services.LocationTrackerService" />
+        <service android:name=".android.services.locationtracker.LocationTrackerService" />
 
         <receiver android:name=".android.receivers.BootReceiver">
             <intent-filter>
