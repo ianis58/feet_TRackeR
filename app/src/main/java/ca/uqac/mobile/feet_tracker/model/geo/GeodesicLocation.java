@@ -11,20 +11,18 @@ public class GeodesicLocation {
     private double latitude;
     private double longitude;
     private double altitude;
-    private double locationId;
     private Long date;
 
-    public GeodesicLocation(int locationsCount, double lat, double lon, double alt) {
+    public GeodesicLocation(double lat, double lon, double alt) {
         latitude = lat;
         longitude = lon;
         altitude = alt;
-        locationId = locationsCount;
     }
-    public GeodesicLocation(int locationsCount, double lat, double lon) {
-        this(locationsCount, lat, lon, 0.0);
+    public GeodesicLocation(double lat, double lon) {
+        this(lat, lon, 0.0);
     }
     public GeodesicLocation() {
-        this(0, 0.0, 0.0, 0.0);
+        this(0.0, 0.0, 0.0);
     }
 
     public double getLatitude() {
@@ -88,11 +86,4 @@ public class GeodesicLocation {
         this.date = date;
     }
 
-    public double getLocationId() {
-        return locationId;
-    }
-
-    public void setLocationId(double locationId) {
-        this.locationId = locationId;
-    }
 }

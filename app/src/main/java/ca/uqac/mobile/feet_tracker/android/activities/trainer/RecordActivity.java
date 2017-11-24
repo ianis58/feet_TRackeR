@@ -1,11 +1,16 @@
 package ca.uqac.mobile.feet_tracker.android.activities.trainer;
 
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
+import android.os.IBinder;
 import android.os.PersistableBundle;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Chronometer;
 import android.widget.ImageButton;
@@ -19,10 +24,12 @@ import com.google.firebase.database.FirebaseDatabase;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 import ca.uqac.mobile.feet_tracker.R;
 import ca.uqac.mobile.feet_tracker.android.activities.login.LoginActivity;
-import ca.uqac.mobile.feet_tracker.android.services.locationtracker.LocationTrackerService;
+import ca.uqac.mobile.feet_tracker.android.services.trackrecorder.TrackRecorderBinder;
+import ca.uqac.mobile.feet_tracker.android.services.trackrecorder.TrackRecorderService;
 
 public class RecordActivity extends AppCompatActivity {
     private static final String TAG = RecordActivity.class.getSimpleName();
@@ -32,14 +39,17 @@ public class RecordActivity extends AppCompatActivity {
     private ImageButton startRecordNewTrack;
     private SeekBar seekBarSamplingFrequency;
     private TextView tvSamplingFrequencyLabel;
-    private int SAMPLING_INTERVAL;
 
     private String newTrackUid;
+    private int samplingInterval;
 
     FirebaseDatabase database;
     DatabaseReference tracksRef;
     FirebaseAuth.AuthStateListener authStateListener;
     FirebaseUser firebaseUser;
+
+    TrackRecorderService trackRecorderService;
+    ServiceConnection serviceConnection;
 
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
@@ -50,6 +60,46 @@ public class RecordActivity extends AppCompatActivity {
     public void onSaveInstanceState(Bundle outState, PersistableBundle outPersistentState) {
         super.onSaveInstanceState(outState, outPersistentState);
         //outState.put
+    }
+
+    private void startTrackRecordingService() {
+        Intent intent = new Intent(this, TrackRecorderService.class);
+
+        //Create serviceConnection
+        serviceConnection = new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName name, IBinder service) {
+                if (service instanceof TrackRecorderBinder) {
+                    trackRecorderService = ((TrackRecorderBinder) service).getService();
+
+                    //That's where trackRecorderService will start sampling
+                    trackRecorderService.startTracking(firebaseUser, newTrackUid, (float) samplingInterval);
+                }
+                else {
+                    Log.e(TAG, String.format("Error, bound service is not a TrackRecorderBinder as expected: %s", service.getClass().getSimpleName()));
+                }
+            }
+
+            @Override
+            public void onServiceDisconnected(ComponentName name) {
+                //Reconnect
+                startTrackRecordingService();
+            }
+        };
+
+        bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    private void stopTrackRecordingService() {
+        chronometerNewTrack.stop();
+        if (trackRecorderService != null) {
+            trackRecorderService.stopTracking();
+            trackRecorderService = null;
+        }
+        if (serviceConnection != null) {
+            unbindService(serviceConnection);
+            serviceConnection = null;
+        }
     }
 
     @Override
@@ -69,7 +119,7 @@ public class RecordActivity extends AppCompatActivity {
 
         endRecordNewTrack.setVisibility(View.GONE);
 
-        SAMPLING_INTERVAL = seekBarSamplingFrequency.getProgress();
+        samplingInterval = seekBarSamplingFrequency.getProgress();
 
         startRecordNewTrack.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -81,9 +131,9 @@ public class RecordActivity extends AppCompatActivity {
                 chronometerNewTrack.setBase(SystemClock.elapsedRealtime());
                 chronometerNewTrack.start();
 
-                //Find today's formated date
+                //Find "now" formatted date
                 Date today = new Date();
-                SimpleDateFormat formatYMD = new SimpleDateFormat("YYYY-MM-dd");
+                SimpleDateFormat formatYMD = new SimpleDateFormat("YYYY-MM-dd HH:mm", Locale.US);
                 String formatted = formatYMD.format(today);
 
                 //Create a new track
@@ -91,24 +141,21 @@ public class RecordActivity extends AppCompatActivity {
                 newTrackUid = newTrack.getKey();
 
                 //Define some starting / default values
-                //Default track title
-                newTrack.child("title").setValue(String.format("Parcours du %s", formatted));
                 //Starting duration: 0
                 newTrack.child("duration").setValue(0);
+                //Location list container
+                newTrack.child("locations");
+                //Default track title
+                newTrack.child("title").setValue(String.format("Parcours du %s", formatted));
 
-                //TODO: Bind service instead of start
-                Intent intent = new Intent(getBaseContext(), LocationTrackerService.class);
-                intent.putExtra("newTrackUid", newTrackUid);
-                intent.putExtra("samplingInterval", SAMPLING_INTERVAL);
-
-                startService(intent);
+                startTrackRecordingService();
             }
         });
 
         endRecordNewTrack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                stopLocationTrackerService();
+                stopTrackRecordingService();
 
                 //Update track's real duration
                 long durationMillis = SystemClock.elapsedRealtime() - chronometerNewTrack.getBase();
@@ -122,12 +169,12 @@ public class RecordActivity extends AppCompatActivity {
         seekBarSamplingFrequency.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                SAMPLING_INTERVAL = seekBarSamplingFrequency.getProgress();
-                if(SAMPLING_INTERVAL < 2){
-                    SAMPLING_INTERVAL = 2;
-                    seekBarSamplingFrequency.setProgress(SAMPLING_INTERVAL);
+                samplingInterval = seekBarSamplingFrequency.getProgress();
+                if(samplingInterval < 2){
+                    samplingInterval = 2;
+                    seekBarSamplingFrequency.setProgress(samplingInterval);
                 }
-                tvSamplingFrequencyLabel.setText("Fréquence d'échantillonnage de la position : " + SAMPLING_INTERVAL + "s");
+                tvSamplingFrequencyLabel.setText("Fréquence d'échantillonnage de la position : " + samplingInterval + "s");
             }
 
             @Override
@@ -156,12 +203,6 @@ public class RecordActivity extends AppCompatActivity {
             }
         };
         FirebaseAuth.getInstance().addAuthStateListener(authStateListener);
-    }
-
-    private void stopLocationTrackerService() {
-        //TODO: Unbind instead of stop
-        stopService(new Intent(this, LocationTrackerService.class));
-        chronometerNewTrack.stop();
     }
 
     private void showStats() {

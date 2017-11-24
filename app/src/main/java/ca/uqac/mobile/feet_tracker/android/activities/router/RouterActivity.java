@@ -31,19 +31,22 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import java.util.Random;
 
 import ca.uqac.mobile.feet_tracker.R;
-import ca.uqac.mobile.feet_tracker.android.services.locationtracker.LocationTrackerBinder;
-import ca.uqac.mobile.feet_tracker.android.services.locationtracker.LocationTrackerListener;
-import ca.uqac.mobile.feet_tracker.android.services.locationtracker.LocationTrackerService;
+import ca.uqac.mobile.feet_tracker.android.services.location.LocationService;
+import ca.uqac.mobile.feet_tracker.android.services.location.LocationBinder;
+import ca.uqac.mobile.feet_tracker.android.services.location.LocationListener;
 import ca.uqac.mobile.feet_tracker.model.geo.GeodesicLocation;
+import ca.uqac.mobile.feet_tracker.model.geo.MetricLocation;
 
 public class RouterActivity extends FragmentActivity implements OnMapReadyCallback {
     private static final String TAG = RouterActivity.class.getSimpleName();
 
     private static final float SINGLE_POINT_ZOOM = 13.0f;
+    private static final float REFRESH_LOCATION_MARKER_INTERVAL_SECS = 5.0f;
 
     //LocationTracker service attributes
-    LocationTrackerService locationTracker;
-    LocationTrackerListener locationTrackerListener;
+    LocationService locationService;
+    LocationListener locationListener;
+    ServiceConnection locationServiceConnection;
 
     //Google Map API attributes
     private GoogleMap mMap;
@@ -84,26 +87,32 @@ public class RouterActivity extends FragmentActivity implements OnMapReadyCallba
     }
 
     private void initializeTracker() {
-        locationTrackerListener = new LocationTrackerListener() {
+        locationListener = new LocationListener() {
             @Override
-            public void onLocationChanged(GeodesicLocation geodesicLocation) {
+            public void onLocationChanged(GeodesicLocation geodesicLocation, MetricLocation metricLocation, long millisElapsed) {
                 updateTrackerPos(geodesicLocation);
             }
         };
 
-        Intent locationTrackerIntent = new Intent(this, LocationTrackerService.class);
-        bindService(locationTrackerIntent, new ServiceConnection() {
+        Intent locationServiceIntent = new Intent(this, LocationService.class);
+        locationServiceConnection = new ServiceConnection() {
             @Override
             public void onServiceConnected(ComponentName name, IBinder service) {
-                LocationTrackerBinder binder = (LocationTrackerBinder) service;
+                final LocationBinder binder;
+                if (service instanceof LocationBinder) {
+                    binder = (LocationBinder) service;
+                }
+                else {
+                    binder = null;
+                }
 
                 if (binder != null) {
-                    locationTracker = binder.getService();
+                    locationService = binder.getService();
 
-                    if (locationTracker != null) {
-                        locationTracker.registerListener(locationTrackerListener);
+                    if (locationService != null) {
+                        locationService.registerListener(locationListener, REFRESH_LOCATION_MARKER_INTERVAL_SECS, true);
 
-                        initFirstMapLocation(locationTracker.getGeodesicLocation());
+                        //initFirstMapLocation(locationService.getGeodesicLocation());
                     }
                     else {
                         Log.e(TAG, getString(R.string.router_err_binder_getservice));
@@ -113,11 +122,13 @@ public class RouterActivity extends FragmentActivity implements OnMapReadyCallba
 
             @Override
             public void onServiceDisconnected(ComponentName name) {
-                locationTracker = null;
-                //Reconnect
+                locationService = null;
+                //Reconnect (and recreate service)
                 initializeTracker();
             }
-        }, Context.BIND_AUTO_CREATE);
+        };
+
+        bindService(locationServiceIntent, locationServiceConnection, Context.BIND_AUTO_CREATE);
     }
 
     private void updateTrackerPos(GeodesicLocation geodesicLocation) {
@@ -294,18 +305,27 @@ public class RouterActivity extends FragmentActivity implements OnMapReadyCallba
 
     @Override
     protected void onResume() {
-        if (locationTracker != null) {
-            locationTracker.registerListener(locationTrackerListener);
+        if (locationService != null) {
+            locationService.registerListener(locationListener, REFRESH_LOCATION_MARKER_INTERVAL_SECS, true);
         }
         super.onResume();
     }
 
     @Override
     protected void onPause() {
-        if (locationTracker != null) {
-            locationTracker.unregisterListener(locationTrackerListener);
+        if (locationService != null) {
+            locationService.unregisterListener(locationListener);
         }
         super.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (locationServiceConnection != null) {
+            unbindService(locationServiceConnection);
+            locationServiceConnection = null;
+        }
+        super.onDestroy();
     }
 
     /**
