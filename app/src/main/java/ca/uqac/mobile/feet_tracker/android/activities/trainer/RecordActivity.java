@@ -45,7 +45,6 @@ public class RecordActivity extends AppCompatActivity {
 
     FirebaseDatabase database;
     DatabaseReference tracksRef;
-    FirebaseAuth.AuthStateListener authStateListener;
     FirebaseUser firebaseUser;
 
     TrackRecorderService trackRecorderService;
@@ -188,7 +187,7 @@ public class RecordActivity extends AppCompatActivity {
             }
         });
 
-        authStateListener = new FirebaseAuth.AuthStateListener() {
+        final FirebaseAuth.AuthStateListener authStateListener = new FirebaseAuth.AuthStateListener() {
             @Override
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
                 FirebaseUser user = firebaseAuth.getCurrentUser();

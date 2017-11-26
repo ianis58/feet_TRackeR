@@ -1,9 +1,5 @@
 package ca.uqac.mobile.feet_tracker.model.geo;
 
-import com.google.firebase.database.Exclude;
-import com.google.firebase.database.ServerValue;
-
-import java.util.Map;
 
 public class GeodesicLocation {
 
@@ -11,7 +7,6 @@ public class GeodesicLocation {
     private double latitude;
     private double longitude;
     private double altitude;
-    private Long date;
 
     public GeodesicLocation(double lat, double lon, double alt) {
         latitude = lat;
@@ -70,20 +65,6 @@ public class GeodesicLocation {
 
     public void setUid(String uid) {
         this.uid = uid;
-    }
-
-
-    public Map<String, String> getDate(){
-        return ServerValue.TIMESTAMP;
-    }
-
-    @Exclude
-    public Long getLongDate() {
-        return date;
-    }
-
-    public void setDate(Long date) {
-        this.date = date;
     }
 
 }

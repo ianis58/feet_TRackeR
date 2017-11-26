@@ -5,10 +5,8 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.location.*;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.SystemClock;
@@ -87,7 +85,7 @@ public class LocationService extends Service implements GoogleApiClient.Connecti
 
     private GoogleApiClient mGoogleApiClient;
     private android.location.Location mLocation;
-    private LocationManager locationManager;
+    //private LocationManager locationManager;
     private LocationRequest mLocationRequest;
 
     private final LinkedList<RegistredListener> mListeners = new LinkedList<>();
@@ -163,7 +161,14 @@ public class LocationService extends Service implements GoogleApiClient.Connecti
         RegistredListener registredListener = new RegistredListener(listener, longInterval);
         mListeners.add(registredListener);
         if (callbackNow) {
-            registredListener.doCallback();
+            if (isLocationValid) {
+                //If location is valid, do callback right away
+                registredListener.doCallback();
+            }
+            else {
+                //Otherwise, do callback as soon as we get a location
+                registredListener.lastTimestamp = registredListener.now() - registredListener.interval;
+            }
         }
     }
     public void registerListener(LocationListener listener, float intervalSeconds) {
@@ -262,7 +267,7 @@ public class LocationService extends Service implements GoogleApiClient.Connecti
                 .addApi(LocationServices.API)
                 .build();
 
-        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        //locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         // Display a notification about us starting.  We put an icon in the status bar.
         //Toast.makeText(getApplicationContext(), "Starting sampling service...3", Toast.LENGTH_LONG).show();
         showNotification();

@@ -1,17 +1,11 @@
 package ca.uqac.mobile.feet_tracker.model.geo;
 
-import com.google.firebase.database.Exclude;
-import com.google.firebase.database.ServerValue;
-
-import java.util.Map;
-
 public class MetricLocation {
 
     private String uid;
     private double north;
     private double east;
     private double altitude;
-    private Long date;
 
     public MetricLocation(double north, double east, double alt) {
         this.north = north;
@@ -49,6 +43,12 @@ public class MetricLocation {
         this.altitude = altitude;
     }
 
+    public void copyFrom(MetricLocation other) {
+        setNorth(other.getNorth());
+        setEast(other.getEast());
+        setAltitude(other.getAltitude());
+    }
+
     @Override
     public boolean equals(Object obj) {
         if(obj == this){
@@ -70,19 +70,6 @@ public class MetricLocation {
 
     public void setUid(String uid) {
         this.uid = uid;
-    }
-
-    public Map<String, String> getDate(){
-        return ServerValue.TIMESTAMP;
-    }
-
-    @Exclude
-    public Long getLongDate() {
-        return date;
-    }
-
-    public void setDate(Long date) {
-        this.date = date;
     }
 
 }
