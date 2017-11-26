@@ -21,6 +21,10 @@ import ca.uqac.mobile.feet_tracker.model.geo.MetricLocation;
 import ca.uqac.mobile.feet_tracker.model.geo.Segment;
 
 public class SegmentLoggerService extends LocationBasedService {
+    private static final boolean SHOW_TOASTS = false;
+    private static final boolean LOG_TOO_SLOW = false;
+    private static final boolean LOG_TOO_FAST = false;
+
     private static final String TAG = SegmentLoggerService.class.getSimpleName();
     private static final float DEFAULT_INTERVAL_SECS = 10.0f;
 
@@ -73,24 +77,30 @@ public class SegmentLoggerService extends LocationBasedService {
                 final double speed = (deltaLocation / 1000) / (deltaTime / 1000 / 60 / 60);
 
                 //Should we log segment?
-                if (speed < MIN_WALK_SPEED) {
-                    //Toast.makeText(this,String.format("SegmentLoggerService found a %.2f meters segment at %.2f km/h (too low)", deltaLocation, speed), Toast.LENGTH_LONG).show();
+                if (speed < MIN_WALK_SPEED && !LOG_TOO_SLOW) {
+                    if (SHOW_TOASTS) {
+                        Toast.makeText(this, String.format("SegmentLoggerService found a %.2f meters segment at %.2f km/h (too low)", deltaLocation, speed), Toast.LENGTH_LONG).show();
+                    }
                     Log.d(TAG, String.format("Speed too low: %.2f km/h (minimum: %.2f km/h)", speed, MIN_WALK_SPEED));
                 }
-                else if (speed > MAX_VEHICULE_SPEED) {
-                    //Toast.makeText(this,String.format("SegmentLoggerService found a %.2f meters segment at %.2f km/h (too fast)", deltaLocation, speed), Toast.LENGTH_LONG).show();
+                else if (speed > MAX_VEHICULE_SPEED && !LOG_TOO_FAST) {
+                    if (SHOW_TOASTS) {
+                        Toast.makeText(this, String.format("SegmentLoggerService found a %.2f meters segment at %.2f km/h (too fast)", deltaLocation, speed), Toast.LENGTH_LONG).show();
+                    }
                     Log.d(TAG, String.format("Speed too fast: %.2f km/h (maximum: %.2f km/h)", speed, MAX_VEHICULE_SPEED));
                 }
                 else {
-                    //Toast.makeText(this, String.format("SegmentLoggerService found a %.2f meters segment at %.2f km/h (acceptable)", deltaLocation, speed), Toast.LENGTH_LONG).show();
+                    if (SHOW_TOASTS) {
+                        Toast.makeText(this, String.format("SegmentLoggerService found a %.2f meters segment at %.2f km/h (acceptable)", deltaLocation, speed), Toast.LENGTH_LONG).show();
+                    }
                     //Acceptable speed, update segment
                     segment.setOrigin(lastLocation);
                     segment.setDestination(newLocation);
                     segment.setSpeed(speed);
                     if (firebaseUser != null) {
-                        segment.setUid(firebaseUser.getUid());
+                        segment.setUserID(firebaseUser.getUid());
                     } else {
-                        segment.setUid("");
+                        segment.setUserID("");
                     }
 
                     //And add it to database
@@ -134,7 +144,9 @@ public class SegmentLoggerService extends LocationBasedService {
 
         bindToLocationService(DEFAULT_INTERVAL_SECS);
 
-        //Toast.makeText(this,"SegmentLoggerService is Started", Toast.LENGTH_LONG).show();
+        if (SHOW_TOASTS) {
+            Toast.makeText(this, "SegmentLoggerService is Started", Toast.LENGTH_LONG).show();
+        }
         super.onCreate();
     }
 
@@ -145,7 +157,9 @@ public class SegmentLoggerService extends LocationBasedService {
 
     @Override
     public void onDestroy() {
-        //Toast.makeText(this,"SegmentLoggerService is Destroyed", Toast.LENGTH_LONG).show();
+        if (SHOW_TOASTS) {
+            Toast.makeText(this, "SegmentLoggerService is Destroyed", Toast.LENGTH_LONG).show();
+        }
         unbindFromLocationService();
         super.onDestroy();
     }

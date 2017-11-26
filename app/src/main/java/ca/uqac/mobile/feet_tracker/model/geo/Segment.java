@@ -3,7 +3,6 @@ package ca.uqac.mobile.feet_tracker.model.geo;
 import com.google.firebase.database.Exclude;
 import com.google.firebase.database.ServerValue;
 
-import java.util.HashMap;
 import java.util.Map;
 
 public class Segment {
