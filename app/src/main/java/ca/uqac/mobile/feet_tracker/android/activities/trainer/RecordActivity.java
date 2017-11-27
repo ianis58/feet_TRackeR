@@ -204,6 +204,12 @@ public class RecordActivity extends AppCompatActivity {
         FirebaseAuth.getInstance().addAuthStateListener(authStateListener);
     }
 
+    @Override
+    public boolean onSupportNavigateUp() {
+        onBackPressed();
+        return true;
+    }
+
     private void showStats() {
         Intent intent = new Intent(RecordActivity.this, NewTrackStatsActivity.class);
         intent.putExtra("newTrackUid", newTrackUid);

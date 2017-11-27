@@ -373,6 +373,12 @@ public class RouterActivity extends FragmentActivity implements OnMapReadyCallba
         super.onDestroy();
     }
 
+    @Override
+    public boolean onNavigateUp() {
+        onBackPressed();
+        return true;
+    }
+
     /**
      * Manipulates the map once available.
      * This callback is triggered when the map is ready to be used.

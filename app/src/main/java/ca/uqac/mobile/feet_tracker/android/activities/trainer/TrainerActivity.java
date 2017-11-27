@@ -163,4 +163,10 @@ public class TrainerActivity extends AppCompatActivity {
 
         return true;
     }
+
+    @Override
+    public boolean onSupportNavigateUp() {
+        onBackPressed();
+        return true;
+    }
 }

@@ -118,6 +118,12 @@ public class NewTrackStatsActivity extends AppCompatActivity {
 
     }
 
+    @Override
+    public boolean onSupportNavigateUp() {
+        onBackPressed();
+        return true;
+    }
+
     private void fetchTrackData() {
         //Ensure firebaseUser is valid
         if (firebaseUser != null && !"".equals(newTrackUid)) {
