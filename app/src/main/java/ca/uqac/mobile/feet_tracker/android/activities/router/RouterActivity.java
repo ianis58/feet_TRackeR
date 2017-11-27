@@ -9,7 +9,10 @@ import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.support.v7.widget.PopupMenu;
 import android.util.Log;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -17,7 +20,6 @@ import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.Places;
 import com.google.android.gms.location.places.ui.PlaceSelectionListener;
-import com.google.android.gms.location.places.ui.SupportPlaceAutocompleteFragment;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -58,8 +60,8 @@ public class RouterActivity extends FragmentActivity implements OnMapReadyCallba
 
     //UI attributes
     SupportMapFragment mapFragment;
-    SupportPlaceAutocompleteFragment placesFrom;
-    SupportPlaceAutocompleteFragment placesTo;
+    EnhancedSupportPlaceAutocompleteFragment placesFrom;
+    EnhancedSupportPlaceAutocompleteFragment placesTo;
 
     //Trajectory attributes
     MarkerOptions markerFrom = new MarkerOptions();
@@ -137,6 +139,37 @@ public class RouterActivity extends FragmentActivity implements OnMapReadyCallba
     }
 
     private void initializeMap() {
+        mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
+            @Override
+            public void onMapLongClick(final LatLng latLng) {
+                //Create popup menu to select either From or To
+                PopupMenu popupMenu = new PopupMenu(RouterActivity.this, mapFragment.getView());
+                MenuInflater menuInflater = popupMenu.getMenuInflater();
+                menuInflater.inflate(R.menu.router_from_to, popupMenu.getMenu());
+
+                //Définir son événement de click sur un item
+                popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+                    @Override
+                    public boolean onMenuItemClick(MenuItem item) {
+                        int id = item.getItemId();
+                        switch (id) {
+                            case R.id.router_from:
+                                fromPos = latLng;
+                                refreshMap();
+                                break;
+                            case R.id.router_to:
+                                toPos = latLng;
+                                refreshMap();
+                                break;
+                        }
+                        return false;
+                    }
+                });
+
+                //Afficher le popup
+                popupMenu.show();
+            }
+        });
         refreshMap();
     }
 
@@ -250,7 +283,7 @@ public class RouterActivity extends FragmentActivity implements OnMapReadyCallba
 
         //Google map initialization
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+        mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
 
         mapFragment.getMapAsync(this);
@@ -269,9 +302,8 @@ public class RouterActivity extends FragmentActivity implements OnMapReadyCallba
                 .enableAutoManage(this, placesFailedListener)
                 .build();
 
-        placesFrom = (SupportPlaceAutocompleteFragment) getSupportFragmentManager().findFragmentById(R.id.places_fragment_from);
+        placesFrom = (EnhancedSupportPlaceAutocompleteFragment) getSupportFragmentManager().findFragmentById(R.id.places_fragment_from);
         placesFrom.setHint(getResources().getString(R.string.router_from_hint));
-
         placesFrom.setOnPlaceSelectedListener(new PlaceSelectionListener() {
             @Override
             public void onPlaceSelected(Place place) {
@@ -284,11 +316,17 @@ public class RouterActivity extends FragmentActivity implements OnMapReadyCallba
                 fromPos = null;
             }
         });
+        placesFrom.setOnClearListener(new EnhancedSupportPlaceAutocompleteFragment.OnClearListener() {
+            @Override
+            public void onClear() {
+                fromPos = null;
+                refreshMap();
+            }
+        });
 
 
-        placesTo = (SupportPlaceAutocompleteFragment) getSupportFragmentManager().findFragmentById(R.id.places_fragment_to);
+        placesTo = (EnhancedSupportPlaceAutocompleteFragment) getSupportFragmentManager().findFragmentById(R.id.places_fragment_to);
         placesTo.setHint(getResources().getString(R.string.router_to_hint));
-
         placesTo.setOnPlaceSelectedListener(new PlaceSelectionListener() {
             @Override
             public void onPlaceSelected(Place place) {
@@ -299,6 +337,13 @@ public class RouterActivity extends FragmentActivity implements OnMapReadyCallba
             @Override
             public void onError(Status status) {
                 toPos = null;
+            }
+        });
+        placesTo.setOnClearListener(new EnhancedSupportPlaceAutocompleteFragment.OnClearListener() {
+            @Override
+            public void onClear() {
+                toPos = null;
+                refreshMap();
             }
         });
     }
