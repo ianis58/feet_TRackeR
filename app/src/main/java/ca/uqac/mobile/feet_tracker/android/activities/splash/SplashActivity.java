@@ -13,7 +13,7 @@ import android.os.Bundle;
 
 import ca.uqac.mobile.feet_tracker.R;
 import ca.uqac.mobile.feet_tracker.android.activities.login.LoginActivity;
-import ca.uqac.mobile.feet_tracker.android.services.locationtracker.LocationTrackerService;
+import ca.uqac.mobile.feet_tracker.android.services.location.LocationService;
 
 public class SplashActivity extends AppCompatActivity {
     private static final String TAG = SplashActivity.class.getSimpleName();
@@ -21,7 +21,7 @@ public class SplashActivity extends AppCompatActivity {
     private static final int FINE_LOCATION_PERMISSION_REQUEST_ID = 1;
 
     private void startLocationTracker() {
-        Intent serviceIntent = new Intent(this, LocationTrackerService.class);
+        Intent serviceIntent = new Intent(this, LocationService.class);
         startService(serviceIntent);
 
     }

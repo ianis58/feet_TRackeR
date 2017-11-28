@@ -109,9 +109,6 @@ public class NewTrackStatsActivity extends AppCompatActivity {
         btnTerminer.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //tracksRef.child(firebaseUser.getUid()).child(newTrackUid).child("title").setValue(etNewTrackTitle.getText().toString());
-                //tracksRef.child(firebaseUser.getUid()).child(newTrackUid).child("duration").setValue(newTrackTimeMillis/1000);
-
                 //Update title
                 currentTrackRef.child("title").setValue(etNewTrackTitle.getText().toString());
 
@@ -119,6 +116,12 @@ public class NewTrackStatsActivity extends AppCompatActivity {
             }
         });
 
+    }
+
+    @Override
+    public boolean onSupportNavigateUp() {
+        onBackPressed();
+        return true;
     }
 
     private void fetchTrackData() {

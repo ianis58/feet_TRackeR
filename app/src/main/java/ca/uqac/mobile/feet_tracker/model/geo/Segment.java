@@ -1,20 +1,31 @@
 package ca.uqac.mobile.feet_tracker.model.geo;
 
+import com.google.firebase.database.Exclude;
+import com.google.firebase.database.ServerValue;
+
 import java.util.Map;
 
 public class Segment {
+    public static final double MIN_WALK_SPEED = 2.5;
+    public static final double MIN_RUN_SPEED = 8;
+    public static final double MIN_VEHICULE_SPEED = 20;
+    public static final double MAX_VEHICULE_SPEED = 80;
+
     private String uid;
-    private MetricLocation origin;
-    private MetricLocation destination;
+    private MetricLocation origin = new MetricLocation();
+    private MetricLocation destination = new MetricLocation();
+    private String userID;
+    private double speed;
+    private long date;
 
     public Segment(){
         //empty constructor required by firebase
     }
 
-    public Segment(MetricLocation origin, MetricLocation destination){
-        this.origin = origin;
-        this.destination = destination;
-
+    public Segment(MetricLocation origin, MetricLocation destination, String userID){
+        setOrigin(origin);
+        setDestination(destination);
+        this.userID = userID;
     }
 
     public String getUid() {
@@ -29,28 +40,45 @@ public class Segment {
         return destination;
     }
 
-    public Map<String, String> getOriginDate(){
-        return origin.getDate();
+    public void setUid(String uid) {
+        this.uid = uid;
     }
 
-    public Map<String, String> getDestinationDate(){
-        return destination.getDate();
+    public void setOrigin(MetricLocation origin) {
+        this.origin.copyFrom(origin);
     }
 
-    public boolean addMetricLocation(MetricLocation metricLocation){
-        if(!this.isFilled()){
-            if(origin == null){
-                origin = metricLocation;
-            }
-            else{
-                destination = metricLocation;
-            }
-        }
-
-        return this.isFilled();
+    public void setDestination(MetricLocation destination) {
+        this.destination.copyFrom(destination);
     }
 
-    private boolean isFilled() {
-        return (origin != null && destination != null);
+    public String getUserID() {
+        return userID;
     }
+
+    public void setUserID(String userID) {
+        this.userID = userID;
+    }
+
+    public double getSpeed() {
+        return speed;
+    }
+
+    public void setSpeed(double speed) {
+        this.speed = speed;
+    }
+
+    public Map<String, String> getDate() {
+        return ServerValue.TIMESTAMP;
+    }
+
+    @Exclude
+    public long getLongDate() {
+        return date;
+    }
+
+    public void setDate(long date) {
+        this.date = date;
+    }
+
 }

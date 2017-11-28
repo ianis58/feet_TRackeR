@@ -15,6 +15,7 @@ import ca.uqac.mobile.feet_tracker.android.activities.devtools.DevToolsActivity;
 import ca.uqac.mobile.feet_tracker.android.activities.login.LoginActivity;
 import ca.uqac.mobile.feet_tracker.android.activities.router.RouterActivity;
 import ca.uqac.mobile.feet_tracker.android.activities.trainer.TrainerActivity;
+import ca.uqac.mobile.feet_tracker.android.receivers.BootReceiver;
 
 public class TrackerActivity extends AppCompatActivity {
 
@@ -40,6 +41,9 @@ public class TrackerActivity extends AppCompatActivity {
                 }
             }
         };
+
+        //Start SegmentLoggerService is not already
+        BootReceiver.ensureSegmentLoggerServiceIsAlive(this);
 
         FirebaseAuth.getInstance().addAuthStateListener(authStateListener);
 

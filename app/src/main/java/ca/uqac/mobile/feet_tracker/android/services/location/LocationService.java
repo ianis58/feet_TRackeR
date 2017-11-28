@@ -1,16 +1,15 @@
-package ca.uqac.mobile.feet_tracker.android.services.locationtracker;
+package ca.uqac.mobile.feet_tracker.android.services.location;
 
 import android.Manifest;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.location.*;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.widget.Toast;
@@ -32,18 +31,64 @@ import ca.uqac.mobile.feet_tracker.model.geo.GeodesicLocation;
 import ca.uqac.mobile.feet_tracker.model.geo.MetricLocation;
 import ca.uqac.mobile.feet_tracker.tools.MTM7Converter;
 
-public class LocationTrackerService extends Service implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, com.google.android.gms.location.LocationListener {
+public class LocationService extends Service implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, com.google.android.gms.location.LocationListener {
+    private class RegistredListener {
+        public long now() {
+            return SystemClock.elapsedRealtime();
+        }
+
+        public LocationListener listener;
+        public long interval;
+        public long lastTimestamp;
+
+        public RegistredListener(LocationListener listener, long interval) {
+            this.listener = listener;
+            this.interval = interval;
+            keepTimestamp();
+        }
+
+        public void keepTimestamp(long now) {
+            this.lastTimestamp = now;
+        }
+        public void keepTimestamp() {
+            keepTimestamp(now());
+        }
+
+
+        public long elapsed(long now) {
+            return now - lastTimestamp;
+        }
+        public long elapsed() {
+            return elapsed(now());
+        }
+
+        public boolean isReady(long now) {
+            return elapsed(now) >= interval;
+        }
+        public boolean isReady() {
+            return isReady(now());
+        }
+
+        private void doCallback(long now) {
+            keepTimestamp(now);
+            if (listener != null) {
+                listener.onLocationChanged(getGeodesicLocation(), getMetricLocation(), elapsed(now));
+            }
+        }
+        private void doCallback() {
+            doCallback(now());
+        }
+    }
+
     private NotificationManager mNM;
     private int NOTIFICATION = R.string.local_service_started;
 
     private GoogleApiClient mGoogleApiClient;
     private android.location.Location mLocation;
-    private LocationManager locationManager;
+    //private LocationManager locationManager;
     private LocationRequest mLocationRequest;
-    private String newTrackUid;
-    private int locationsCount;
 
-    private final LinkedList<LocationTrackerListener> mListeners = new LinkedList<>();
+    private final LinkedList<RegistredListener> mListeners = new LinkedList<>();
 
     FirebaseDatabase database;
     DatabaseReference myRef;
@@ -51,13 +96,12 @@ public class LocationTrackerService extends Service implements GoogleApiClient.C
     FirebaseUser firebaseUser;
 
 
-    private boolean isGeodesicLocationValid = false;
+    private boolean isLocationValid = false;
     private final GeodesicLocation lastKnownGeodesicLocation = new GeodesicLocation();
-    private boolean isMetricLocationValid = false;
     private final MetricLocation lastKnownMetricLocation = new MetricLocation();
 
     // This is the object that receives interactions from clients.
-    private final IBinder mBinder = new LocationTrackerBinder(this);
+    private final IBinder mBinder = new LocationBinder(this);
 
     private int UPDATE_INTERVAL = 1000 * 5; // /< location update interval
     private int FASTEST_INTERVAL = 1000 * 5; // /< fastest location update interval
@@ -68,46 +112,78 @@ public class LocationTrackerService extends Service implements GoogleApiClient.C
         onLocationChanged(mLocation);
     }
 
-    private void updateGeodesicLocation(int locationsCount, double latitude, double longitude, double altitude) {
+    private void updateLocationsFromGeodesic(double latitude, double longitude, double altitude) {
         //Update geodesic location
-        //TODO: Remove
-        lastKnownGeodesicLocation.setLocationId(locationsCount);
         lastKnownGeodesicLocation.setLatitude(latitude);
         lastKnownGeodesicLocation.setLongitude(longitude);
         lastKnownGeodesicLocation.setAltitude(altitude);
-        //It's now valid
-        isGeodesicLocationValid = true;
 
-        //Metric location is no longer valid
-        isMetricLocationValid = false;
+        updateMetricLocation();
+
+        //It's now valid
+        isLocationValid = true;
+
     }
 
     private void updateMetricLocation() {
-        //Only update if geodesic is valid since we'll compute metric from geodesic
-        if (isGeodesicLocationValid) {
-            MTM7Converter.geodesicToMetric(lastKnownGeodesicLocation, lastKnownMetricLocation);
-            //Metric location is now valid
-            isMetricLocationValid = true;
-        }
+        MTM7Converter.geodesicToMetric(lastKnownGeodesicLocation, lastKnownMetricLocation);
     }
 
     public GeodesicLocation getGeodesicLocation() {
-        return isGeodesicLocationValid ? lastKnownGeodesicLocation : null;
+        return isLocationValid ? lastKnownGeodesicLocation : null;
     }
 
     public MetricLocation getMetricLocation() {
         updateMetricLocation();
-        return isMetricLocationValid ? lastKnownMetricLocation : null;
+        return isLocationValid ? lastKnownMetricLocation : null;
     }
 
-    public void registerListener(LocationTrackerListener listener) {
-        if (!mListeners.contains(listener)) {
-            mListeners.add(listener);
+    /**
+     * Register a Location callback, new location will be sent each intervalSeconds (minimum, it could be a little longer)
+     * @param listener Callback instance
+     * @param intervalSeconds Minimum callback interval
+     */
+    public void registerListener(LocationListener listener, float intervalSeconds, boolean callbackNow) {
+        long longInterval = (long) (intervalSeconds * 1000.0f);
+        //Search for that listener
+        for (RegistredListener registredListener : mListeners) {
+            if (registredListener.listener == listener) {
+                //Found, update it
+                registredListener.interval = longInterval;
+
+                if (callbackNow) {
+                    registredListener.doCallback();
+                }
+                return;
+            }
+        }
+        //Not found, add it
+        RegistredListener registredListener = new RegistredListener(listener, longInterval);
+        mListeners.add(registredListener);
+        if (callbackNow) {
+            if (isLocationValid) {
+                //If location is valid, do callback right away
+                registredListener.doCallback();
+            }
+            else {
+                //Otherwise, do callback as soon as we get a location
+                registredListener.lastTimestamp = registredListener.now() - registredListener.interval;
+            }
         }
     }
+    public void registerListener(LocationListener listener, float intervalSeconds) {
+        registerListener(listener, intervalSeconds, false);
+    }
 
-    public void unregisterListener(LocationTrackerListener listener) {
-        mListeners.remove(listener);
+
+    public void unregisterListener(LocationListener listener) {
+        //Search for listener
+        for (RegistredListener registredListener : mListeners) {
+            if (registredListener.listener == listener) {
+                mListeners.remove(registredListener);
+                break;
+            }
+        }
     }
 
     @Override
@@ -126,20 +202,17 @@ public class LocationTrackerService extends Service implements GoogleApiClient.C
             double longitude = mLocation.getLongitude();
             double altitude = mLocation.getAltitude();
 
-            updateGeodesicLocation(locationsCount, latitude, longitude, altitude);
-            GeodesicLocation loc = lastKnownGeodesicLocation;
-
-            //TODO: Déplacer tout ça dans TrainerActivity
-            if (newTrackUid != null && !"".equals(newTrackUid)) {
-                myRef.child(firebaseUser.getUid()).child(newTrackUid).child("locations").push().setValue(loc);
-            }
+            updateLocationsFromGeodesic(latitude, longitude, altitude);
 
             //Broadcast location changed event
-            for (LocationTrackerListener listener : mListeners) {
-                listener.onLocationChanged(loc);
-            }
+            for (RegistredListener registredListener : mListeners) {
+                //Keep a copy of the actuel timestamp so we always use the same value for that registred listener
+                long now = registredListener.now();
 
-            locationsCount++;
+                if (registredListener.isReady(now)) {
+                    registredListener.doCallback(now);
+                }
+            }
 
         } else {
             Toast.makeText(this, R.string.error_accessing_location, Toast.LENGTH_SHORT).show();
@@ -152,7 +225,8 @@ public class LocationTrackerService extends Service implements GoogleApiClient.C
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
                 .setInterval(UPDATE_INTERVAL)
                 .setFastestInterval(FASTEST_INTERVAL);
-        // Request location updates
+
+        // Check for ACCESS_FINE_LOCATION permission
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
@@ -187,15 +261,13 @@ public class LocationTrackerService extends Service implements GoogleApiClient.C
         database = FirebaseDatabase.getInstance();
         myRef = database.getReference("tracks");
 
-        locationsCount = 0;
-
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .addApi(LocationServices.API)
                 .build();
 
-        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        //locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         // Display a notification about us starting.  We put an icon in the status bar.
         //Toast.makeText(getApplicationContext(), "Starting sampling service...3", Toast.LENGTH_LONG).show();
         showNotification();
@@ -215,7 +287,7 @@ public class LocationTrackerService extends Service implements GoogleApiClient.C
         FirebaseAuth.getInstance().addAuthStateListener(authStateListener);
     }
 
-    @Override
+    /*@Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Toast.makeText(this, R.string.local_service_started, Toast.LENGTH_LONG).show();
         mGoogleApiClient.connect();
@@ -230,7 +302,7 @@ public class LocationTrackerService extends Service implements GoogleApiClient.C
         }
 
         return START_STICKY;
-    }
+    }*/
 
     @Override
     public void onDestroy() {
