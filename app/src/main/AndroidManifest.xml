@@ -24,17 +24,21 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".android.services.location.LocationService"
+        <service
+            android:name=".android.services.location.LocationService"
             android:enabled="true"
             android:exported="false" />
-        <service android:name=".android.services.trackrecorder.TrackRecorderService"
+        <service
+            android:name=".android.services.trackrecorder.TrackRecorderService"
             android:enabled="true"
             android:exported="false" />
-        <service android:name=".android.services.segmentlogger.SegmentLoggerService"
+        <service
+            android:name=".android.services.segmentlogger.SegmentLoggerService"
             android:enabled="true"
             android:exported="false" />
 
-        <receiver android:name=".android.receivers.BootReceiver"
+        <receiver
+            android:name=".android.receivers.BootReceiver"
             android:enabled="true"
             android:exported="false">
             <intent-filter>
@@ -107,7 +111,13 @@
         <activity
             android:name=".android.activities.trainer.NewTrackStatsActivity"
             android:label="@string/new_track_stats_activity_title" />
-
+        <activity
+            android:name=".android.activities.devtools.segmentviewer.SegmentViewerActivity"
+            android:label="@string/title_activity_segment_viewer">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="ca.uqac.mobile.feet_tracker.android.activities.devtools.DevToolsActivity" />
+        </activity>
     </application>
 
 </manifest>

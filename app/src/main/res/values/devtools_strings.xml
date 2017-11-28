@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="dev_tools_activity_title">Developer tools</string>
+    <string name="title_activity_dev_tools">Developer tools</string>
+    <string name="title_activity_segment_viewer">Segment Viewer</string>
 </resources>

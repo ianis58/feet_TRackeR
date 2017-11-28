@@ -25,13 +25,10 @@ public class SegmentLoggerService extends LocationBasedService {
     private static final boolean LOG_TOO_SLOW = false;
     private static final boolean LOG_TOO_FAST = false;
 
+    private static final double MIN_INVALID_SPEED = 500.0;
+
     private static final String TAG = SegmentLoggerService.class.getSimpleName();
     private static final float DEFAULT_INTERVAL_SECS = 10.0f;
-
-    public static final double MIN_WALK_SPEED = 2.5;
-    public static final double MIN_RUN_SPEED = 8;
-    public static final double MIN_VEHICULE_SPEED = 20;
-    public static final double MAX_VEHICULE_SPEED = 80;
 
     private final SegmentLoggerBinder mBinder = new SegmentLoggerBinder(this);
 
@@ -77,17 +74,21 @@ public class SegmentLoggerService extends LocationBasedService {
                 final double speed = (deltaLocation / 1000) / (deltaTime / 1000 / 60 / 60);
 
                 //Should we log segment?
-                if (speed < MIN_WALK_SPEED && !LOG_TOO_SLOW) {
+                if (speed > MIN_INVALID_SPEED) {
+                    Log.d(TAG, String.format("Invalid speed detected: %.2f km/h", speed));
+                    return; //We don't want to backup location
+                }
+                if (speed < Segment.MIN_WALK_SPEED && !LOG_TOO_SLOW) {
                     if (SHOW_TOASTS) {
                         Toast.makeText(this, String.format("SegmentLoggerService found a %.2f meters segment at %.2f km/h (too low)", deltaLocation, speed), Toast.LENGTH_LONG).show();
                     }
-                    Log.d(TAG, String.format("Speed too low: %.2f km/h (minimum: %.2f km/h)", speed, MIN_WALK_SPEED));
+                    Log.d(TAG, String.format("Speed too low: %.2f km/h (minimum: %.2f km/h)", speed, Segment.MIN_WALK_SPEED));
                 }
-                else if (speed > MAX_VEHICULE_SPEED && !LOG_TOO_FAST) {
+                else if (speed > Segment.MAX_VEHICULE_SPEED && !LOG_TOO_FAST) {
                     if (SHOW_TOASTS) {
                         Toast.makeText(this, String.format("SegmentLoggerService found a %.2f meters segment at %.2f km/h (too fast)", deltaLocation, speed), Toast.LENGTH_LONG).show();
                     }
-                    Log.d(TAG, String.format("Speed too fast: %.2f km/h (maximum: %.2f km/h)", speed, MAX_VEHICULE_SPEED));
+                    Log.d(TAG, String.format("Speed too fast: %.2f km/h (maximum: %.2f km/h)", speed, Segment.MAX_VEHICULE_SPEED));
                 }
                 else {
                     if (SHOW_TOASTS) {

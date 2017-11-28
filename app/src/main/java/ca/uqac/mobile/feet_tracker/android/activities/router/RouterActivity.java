@@ -7,8 +7,8 @@ import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
-import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.PopupMenu;
 import android.util.Log;
 import android.view.MenuInflater;
@@ -39,7 +39,7 @@ import ca.uqac.mobile.feet_tracker.android.services.location.LocationListener;
 import ca.uqac.mobile.feet_tracker.model.geo.GeodesicLocation;
 import ca.uqac.mobile.feet_tracker.model.geo.MetricLocation;
 
-public class RouterActivity extends FragmentActivity implements OnMapReadyCallback {
+public class RouterActivity extends AppCompatActivity implements OnMapReadyCallback {
     private static final String TAG = RouterActivity.class.getSimpleName();
 
     private static final float SINGLE_POINT_ZOOM = 13.0f;
@@ -346,6 +346,12 @@ public class RouterActivity extends FragmentActivity implements OnMapReadyCallba
                 refreshMap();
             }
         });
+    }
+
+    @Override
+    public boolean onSupportNavigateUp() {
+        onBackPressed();
+        return true;
     }
 
     @Override

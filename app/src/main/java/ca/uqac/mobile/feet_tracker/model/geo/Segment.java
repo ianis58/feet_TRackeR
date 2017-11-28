@@ -6,6 +6,11 @@ import com.google.firebase.database.ServerValue;
 import java.util.Map;
 
 public class Segment {
+    public static final double MIN_WALK_SPEED = 2.5;
+    public static final double MIN_RUN_SPEED = 8;
+    public static final double MIN_VEHICULE_SPEED = 20;
+    public static final double MAX_VEHICULE_SPEED = 80;
+
     private String uid;
     private MetricLocation origin = new MetricLocation();
     private MetricLocation destination = new MetricLocation();
