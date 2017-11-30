@@ -10,7 +10,6 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 
 import ca.uqac.mobile.feet_tracker.R;
-import ca.uqac.mobile.feet_tracker.android.activities.devtools.graphviewer.GraphNode;
 import ca.uqac.mobile.feet_tracker.android.activities.devtools.graphviewer.GraphViewerActivity;
 import ca.uqac.mobile.feet_tracker.android.activities.devtools.segmentviewer.SegmentViewerActivity;
 
@@ -19,6 +18,7 @@ public class DevToolsActivity extends AppCompatActivity {
     public static final String DEV_TOOLS_PREFS = "DevToolsPreferences";
 
     private Button btnSegmentView;
+    private Button btnGraphView;
     private CheckBox cbShowTracksIds;
     private CheckBox cbShowSamplingFrequency;
     private CheckBox cbSkipLoadingSplash;
@@ -29,7 +29,6 @@ public class DevToolsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dev_tools);
 
-        final Button btnSegmentView = (Button) findViewById(R.id.devtool_segmentviewer);
         findViews();
         setViewsListeners();
         restoreCheckboxesState();
@@ -47,6 +46,7 @@ public class DevToolsActivity extends AppCompatActivity {
 
     private void findViews() {
         btnSegmentView = (Button) findViewById(R.id.devtool_segmentviewer);
+        btnGraphView = (Button) findViewById(R.id.devtool_graphviewer);
         cbShowTracksIds = (CheckBox) findViewById(R.id.cbShowTracksIds);
         cbShowSamplingFrequency = (CheckBox) findViewById(R.id.cbShowSamplingFrequency);
         cbSkipLoadingSplash = (CheckBox) findViewById(R.id.cbSkipLoadingSplash);
@@ -63,7 +63,6 @@ public class DevToolsActivity extends AppCompatActivity {
             });
         }
 
-        final Button btnGraphView = (Button) findViewById(R.id.devtool_graphviewer);
         if (btnGraphView != null) {
             btnGraphView.setOnClickListener(new View.OnClickListener() {
                 @Override
