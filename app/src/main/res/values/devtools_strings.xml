@@ -3,4 +3,5 @@
     <string name="dev_tools_activity_title">Developer tools</string>
     <string name="title_activity_dev_tools">Developer tools</string>
     <string name="title_activity_segment_viewer">Segment Viewer</string>
+    <string name="graphviewer_refresh">Refresh</string>
 </resources>

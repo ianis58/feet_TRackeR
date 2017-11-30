@@ -4,6 +4,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
@@ -13,6 +14,7 @@ import android.support.v7.widget.PopupMenu;
 import android.util.Log;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.widget.LinearLayout;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -25,8 +27,10 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 
@@ -53,7 +57,7 @@ public class RouterActivity extends AppCompatActivity implements OnMapReadyCallb
     //Google Map API attributes
     private GoogleMap mMap;
 
-    private LatLng mInitialMapPos = null;
+    private LatLng mLastKnownPos = null;
 
     //Google Places API attributes
     private GoogleApiClient mClient;
@@ -72,19 +76,25 @@ public class RouterActivity extends AppCompatActivity implements OnMapReadyCallb
     LatLng fromPos;
     LatLng toPos;
 
-    private void initFirstMapLocation(GeodesicLocation geodesicLocation) {
-        if (mInitialMapPos == null && geodesicLocation != null) {
-            mInitialMapPos = new LatLng(geodesicLocation.getLatitude(), geodesicLocation.getLongitude());
+    MarkerOptions currentPosMarkerOptions = new MarkerOptions();
+    Marker currentPosMarker;
 
-            fromPos = mInitialMapPos;
+    private void initFirstMapLocation(LatLng initalLatLng) {
+        if (mLastKnownPos == null && initalLatLng != null) {
+            mLastKnownPos = initalLatLng;
+
+            fromPos = mLastKnownPos;
             placesFrom.setText(getString(R.string.router_actuel_location));
 
             refreshMap();
 
-            LatLngBounds bounds = new LatLngBounds.Builder().include(mInitialMapPos).build();
+            LatLngBounds bounds = new LatLngBounds.Builder().include(mLastKnownPos).build();
 
             placesFrom.setBoundsBias(bounds);
             placesTo.setBoundsBias(bounds);
+        }
+        else {
+            mLastKnownPos = initalLatLng;
         }
     }
 
@@ -134,8 +144,13 @@ public class RouterActivity extends AppCompatActivity implements OnMapReadyCallb
     }
 
     private void updateTrackerPos(GeodesicLocation geodesicLocation) {
-        initFirstMapLocation(geodesicLocation);
-        //TODO: déplacer le marqueur de la position actuelle
+        LatLng currentLatLng = new LatLng(geodesicLocation.getLatitude(), geodesicLocation.getLongitude());
+
+        initFirstMapLocation(currentLatLng);
+
+        if (currentPosMarker != null) {
+            currentPosMarker.setPosition(currentLatLng);
+        }
     }
 
     private void initializeMap() {
@@ -155,10 +170,12 @@ public class RouterActivity extends AppCompatActivity implements OnMapReadyCallb
                         switch (id) {
                             case R.id.router_from:
                                 fromPos = latLng;
+                                placesFrom.setLatLng(latLng);
                                 refreshMap();
                                 break;
                             case R.id.router_to:
                                 toPos = latLng;
+                                placesTo.setLatLng(latLng);
                                 refreshMap();
                                 break;
                         }
@@ -202,14 +219,26 @@ public class RouterActivity extends AppCompatActivity implements OnMapReadyCallb
         if (mMap != null) {
             mMap.clear();
 
+            if (mLastKnownPos != null) {
+                currentPosMarkerOptions
+                        .alpha(0.8f)
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN))
+                        .title(getString(R.string.router_current_pos))
+                        .position(mLastKnownPos)
+                ;
+                currentPosMarker = mMap.addMarker(currentPosMarkerOptions);
+            }
+
             if (fromPos != null) {
                 markerFrom.position(fromPos);
                 markerFrom.title(getResources().getString(R.string.router_from_hint));
+                markerFrom.alpha(0.8f);
                 mMap.addMarker(markerFrom);
             }
             if (toPos != null) {
                 markerTo.position(toPos);
                 markerTo.title(getResources().getString(R.string.router_to_hint));
+                markerTo.alpha(0.8f);
                 mMap.addMarker(markerTo);
             }
 
@@ -255,8 +284,8 @@ public class RouterActivity extends AppCompatActivity implements OnMapReadyCallb
             else if (toPos != null) {
                 cameraUpdate = CameraUpdateFactory.newLatLngZoom(toPos, SINGLE_POINT_ZOOM);
             }
-            else if (mInitialMapPos != null) {
-                cameraUpdate = CameraUpdateFactory.newLatLngZoom(mInitialMapPos, SINGLE_POINT_ZOOM);
+            else if (mLastKnownPos != null) {
+                cameraUpdate = CameraUpdateFactory.newLatLngZoom(mLastKnownPos, SINGLE_POINT_ZOOM);
             }
             else {
                 cameraUpdate = null;
@@ -274,6 +303,15 @@ public class RouterActivity extends AppCompatActivity implements OnMapReadyCallb
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_router);
+
+        final LinearLayout placesContainer = (LinearLayout) findViewById(R.id.router_places);
+        if (placesContainer != null) {
+            placesContainer.setOrientation(
+                getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT
+                        ? LinearLayout.VERTICAL
+                        : LinearLayout.HORIZONTAL
+            );
+        }
 
         mMap = null;
         fromPos = null;

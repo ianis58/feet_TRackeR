@@ -29,7 +29,6 @@ public class SegmentViewerActivity extends AppCompatActivity implements OnMapRea
 
     private GoogleMap mMap;
 
-    private FirebaseDatabase database;
     private DatabaseReference segmentsRef;
 
     @Override
@@ -41,7 +40,7 @@ public class SegmentViewerActivity extends AppCompatActivity implements OnMapRea
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-        database = FirebaseDatabase.getInstance();
+        final FirebaseDatabase database = FirebaseDatabase.getInstance();
         segmentsRef = database.getReference("segments");
 
     }
@@ -54,7 +53,7 @@ public class SegmentViewerActivity extends AppCompatActivity implements OnMapRea
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.segmentviewermenu, menu);
+        getMenuInflater().inflate(R.menu.segmentviewer_menu, menu);
         return true;
     }
 

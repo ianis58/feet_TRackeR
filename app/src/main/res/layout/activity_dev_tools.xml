@@ -19,5 +19,13 @@
             android:text="@string/title_activity_segment_viewer"
             android:textAllCaps="false" />
 
+        <Button
+            android:id="@+id/devtool_graphviewer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="20dp"
+            android:text="@string/title_activity_graph_viewer"
+            android:textAllCaps="false" />
+
     </LinearLayout>
 </ScrollView>

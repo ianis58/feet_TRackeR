@@ -118,6 +118,13 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="ca.uqac.mobile.feet_tracker.android.activities.devtools.DevToolsActivity" />
         </activity>
+        <activity
+            android:name=".android.activities.devtools.graphviewer.GraphViewerActivity"
+            android:label="@string/title_activity_graph_viewer">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="ca.uqac.mobile.feet_tracker.android.activities.devtools.DevToolsActivity" />
+        </activity>
     </application>
 
 </manifest>

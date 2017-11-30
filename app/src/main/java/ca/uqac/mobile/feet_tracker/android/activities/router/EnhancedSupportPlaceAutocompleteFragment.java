@@ -8,6 +8,7 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 
 import com.google.android.gms.location.places.ui.SupportPlaceAutocompleteFragment;
+import com.google.android.gms.maps.model.LatLng;
 
 /**
  * Created by MeTaL125 on 2017-11-27.
@@ -29,6 +30,10 @@ public class EnhancedSupportPlaceAutocompleteFragment extends SupportPlaceAutoco
 
     public void setOnClearListener(OnClearListener listener) {
         this.onClearListener = listener;
+    }
+
+    public void setLatLng(LatLng latLng) {
+        searchInput.setText(String.format("%.6f, %.6f", latLng.latitude, latLng.longitude));
     }
 
     @Override
