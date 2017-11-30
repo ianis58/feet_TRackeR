@@ -27,5 +27,23 @@
             android:text="@string/title_activity_graph_viewer"
             android:textAllCaps="false" />
 
+        <CheckBox
+            android:id="@+id/cbShowTracksIds"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Show tracks ids in TrackStatsActivity" />
+
+        <CheckBox
+            android:id="@+id/cbShowSamplingFrequency"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Show sampling frequency in RecordActivity" />
+
+        <CheckBox
+            android:id="@+id/cbSkipLoadingSplash"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Skip loading splash screen" />
+
     </LinearLayout>
 </ScrollView>

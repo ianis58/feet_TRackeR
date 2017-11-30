@@ -19,5 +19,8 @@
     <string name="record_activity_title">Nouveau trajet</string>
     <string name="new_track_stats_activity_title">Résumé</string>
     <string name="title_activity_graph_viewer">Graph Viewer</string>
+    <string name="btn_dev_tools">Developer tools</string>
+    <string name="btn_launch_feet_router">feet RouTeR</string>
+    <string name="btn_launch_feet_trainer">feet TRaineR</string>
 
 </resources>

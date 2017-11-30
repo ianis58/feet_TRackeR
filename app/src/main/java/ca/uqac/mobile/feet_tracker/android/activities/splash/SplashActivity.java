@@ -3,6 +3,7 @@ package ca.uqac.mobile.feet_tracker.android.activities.splash;
 import android.Manifest;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Handler;
 import android.support.annotation.NonNull;
@@ -14,6 +15,8 @@ import android.os.Bundle;
 import ca.uqac.mobile.feet_tracker.R;
 import ca.uqac.mobile.feet_tracker.android.activities.login.LoginActivity;
 import ca.uqac.mobile.feet_tracker.android.services.location.LocationService;
+
+import static ca.uqac.mobile.feet_tracker.android.activities.devtools.DevToolsActivity.DEV_TOOLS_PREFS;
 
 public class SplashActivity extends AppCompatActivity {
     private static final String TAG = SplashActivity.class.getSimpleName();
@@ -27,14 +30,24 @@ public class SplashActivity extends AppCompatActivity {
     }
 
     private void launchLogin() {
-        //Wait 2 seconds before starting LoginActivity (just to show the splash screen a bit)
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                Intent intent = new Intent(SplashActivity.this, LoginActivity.class);
-                startActivity(intent);
-            }
-        }, 2000);
+        SharedPreferences devToolsPrefs = getSharedPreferences(DEV_TOOLS_PREFS, MODE_PRIVATE);
+        boolean skipLoadingSplash = devToolsPrefs.getBoolean("skipLoadingSplash", false);
+
+        if(!skipLoadingSplash){
+            //Wait 2 seconds before starting LoginActivity (just to show the splash screen a bit)
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    Intent intent = new Intent(SplashActivity.this, LoginActivity.class);
+                    startActivity(intent);
+                }
+            }, 2000);
+        }
+        else{
+            Intent intent = new Intent(SplashActivity.this, LoginActivity.class);
+            startActivity(intent);
+        }
+
     }
 
     private boolean hasGPSPermission() {

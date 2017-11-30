@@ -19,6 +19,10 @@ import ca.uqac.mobile.feet_tracker.android.receivers.BootReceiver;
 
 public class TrackerActivity extends AppCompatActivity {
 
+    private Button btnTrainer;
+    private Button btnRouter;
+    private Button btnDevTools;
+
     FirebaseAuth.AuthStateListener authStateListener;
     FirebaseUser firebaseUser;
 
@@ -47,18 +51,25 @@ public class TrackerActivity extends AppCompatActivity {
 
         FirebaseAuth.getInstance().addAuthStateListener(authStateListener);
 
-        Button btnTrainer = (Button) findViewById(R.id.btnTrainer);
+        findViews();
+        setViewsListeners();
+    }
+
+    private void findViews() {
+        btnTrainer = (Button) findViewById(R.id.btnTrainer);
+        btnRouter = (Button) findViewById(R.id.btnRouter);
+        btnDevTools = (Button) findViewById(R.id.btnDevTools);
+    }
+
+    private void setViewsListeners() {
         btnTrainer.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // TODO: Uncomment
                 Intent intent = new Intent(TrackerActivity.this, TrainerActivity.class);
-                intent.putExtra("userUid", firebaseUser.getUid());
                 startActivity(intent);
             }
         });
 
-        Button btnRouter = (Button) findViewById(R.id.btnRouter);
         btnRouter.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -67,7 +78,7 @@ public class TrackerActivity extends AppCompatActivity {
             }
         });
 
-        Button btnDevTools = (Button) findViewById(R.id.btnDevTools);
+
         btnDevTools.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -75,6 +86,6 @@ public class TrackerActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
-
     }
+
 }

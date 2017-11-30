@@ -39,7 +39,6 @@ public class TrainerActivity extends AppCompatActivity {
     private DatabaseReference tracksRef;
     FirebaseAuth.AuthStateListener authStateListener;
     FirebaseUser firebaseUser;
-    String userUid;
 
     private void startRecordActivity() {
         Intent intent = new Intent(TrainerActivity.this, RecordActivity.class);
@@ -59,20 +58,11 @@ public class TrainerActivity extends AppCompatActivity {
             }
         });
 
-        Intent i = getIntent();
-
-        if(i != null) {
-            userUid = i.getStringExtra("userUid");
-        }
-
         database = FirebaseDatabase.getInstance();
         tracksRef = database.getReference("tracks");
 
         //Get firebase user
         firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
-        if (firebaseUser != null) {
-            String tmpUserUid = firebaseUser.getUid();
-        }
 
         if (firebaseUser == null) {
             //If firebase user unavailable, try another method
@@ -106,7 +96,7 @@ public class TrainerActivity extends AppCompatActivity {
         adapter = new TrackAdapter();
         recyclerViewTracksHistory.setAdapter(adapter);//define the TrackAdapter as the adapter we want to use for our RecyclerView
 
-        tracksRef.child(userUid)
+        tracksRef.child(firebaseUser.getUid())
                 .addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(DataSnapshot dataSnapshot, String s) {
@@ -146,21 +136,7 @@ public class TrainerActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         /*MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.trainer_actionbar, menu);*/
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()){
-            case R.id.action_new_track: {
-                startRecordActivity();
-
-                return true;
-            }
-
-        }
-
+        inflater.inflate(R.menu. , menu);*/
         return true;
     }
 

@@ -1,11 +1,14 @@
 package ca.uqac.mobile.feet_tracker.android.activities.trainer;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -16,21 +19,25 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.ValueEventListener;
 
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 import ca.uqac.mobile.feet_tracker.R;
 import ca.uqac.mobile.feet_tracker.android.activities.login.LoginActivity;
 import ca.uqac.mobile.feet_tracker.model.geo.Track;
 
-public class NewTrackStatsActivity extends AppCompatActivity {
+import static ca.uqac.mobile.feet_tracker.android.activities.devtools.DevToolsActivity.DEV_TOOLS_PREFS;
+
+public class TrackStatsActivity extends AppCompatActivity {
 
     private EditText etNewTrackTitle;
     private TextView tvTrackDuration;
     private TextView tvLocationsCount;
     private TextView tvTrackUid;
-    private Button btnTerminer;
+    private TextView tvTrackUidLabel;
 
     private String newTrackUid;
     private Long newTrackTimeMillis;
@@ -43,21 +50,53 @@ public class NewTrackStatsActivity extends AppCompatActivity {
     FirebaseUser firebaseUser;
 
     @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.trainer_track_stats_actionbar, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()){
+            case R.id.action_save_track:
+                saveTrackAndClose();
+                break;
+        }
+
+        return true;
+    }
+
+    private void saveTrackAndClose() {
+        //Update title
+        currentTrackRef.child("title").setValue(etNewTrackTitle.getText().toString());
+        currentTrackRef.child("date").setValue(System.currentTimeMillis());
+
+        finish();
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         //Init UI components
-        setContentView(R.layout.activity_new_track_stats);
+        setContentView(R.layout.activity_track_stats);
         etNewTrackTitle = (EditText) findViewById(R.id.etNewTrackTitle);
         tvTrackDuration = (TextView) findViewById(R.id.tvTrackDuration);
         tvTrackUid = (TextView) findViewById(R.id.tvTrackUid);
-        btnTerminer = (Button) findViewById(R.id.btnTerminer);
+        tvTrackUidLabel = (TextView) findViewById(R.id.tvTrackUidLabel);
+
+        SharedPreferences devToolsPrefs = getSharedPreferences(DEV_TOOLS_PREFS, MODE_PRIVATE);
+        boolean showTracksIds = devToolsPrefs.getBoolean("showTracksIds", false);
+        if(!showTracksIds){
+            tvTrackUid.setVisibility(View.GONE);
+            tvTrackUidLabel.setVisibility(View.GONE);
+        }
 
         //Init temporary data
         etNewTrackTitle.setText("");
         tvTrackDuration.setText("");
         etNewTrackTitle.setEnabled(false);
-        btnTerminer.setEnabled(false);
 
         Intent intent = getIntent();
 
@@ -65,7 +104,6 @@ public class NewTrackStatsActivity extends AppCompatActivity {
             newTrackUid = intent.getStringExtra("newTrackUid");
             tvTrackUid.setText(newTrackUid);
 
-            //newTrackTimeMillis = i.getLongExtra("newTrackTime", 0);
         }
         else{
             newTrackUid = "";
@@ -93,7 +131,7 @@ public class NewTrackStatsActivity extends AppCompatActivity {
                         //We're now ready to fetch track
                         fetchTrackData();
                     } else {
-                        Intent intent = new Intent(NewTrackStatsActivity.this, LoginActivity.class);
+                        Intent intent = new Intent(TrackStatsActivity.this, LoginActivity.class);
                         startActivity(intent);
                         finish();
                     }
@@ -105,17 +143,6 @@ public class NewTrackStatsActivity extends AppCompatActivity {
             //OK we already have user, fetch Track right away
             fetchTrackData();
         }
-
-        btnTerminer.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                //Update title
-                currentTrackRef.child("title").setValue(etNewTrackTitle.getText().toString());
-
-                finish();
-            }
-        });
-
     }
 
     @Override
@@ -149,7 +176,6 @@ public class NewTrackStatsActivity extends AppCompatActivity {
 
                     //OK we can enable title edit and update button
                     etNewTrackTitle.setEnabled(true);
-                    btnTerminer.setEnabled(true);
                 }
 
                 @Override

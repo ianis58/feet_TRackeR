@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="trainer_activity_title">feet TRaineR</string>
-    <string name="trainer_new_track">New track</string>
+    <string name="trainer_save_track_stats">Enregistrer</string>
     <string name="trainer_end_record">End record</string>
 </resources>
