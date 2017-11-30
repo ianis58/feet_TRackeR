@@ -1,21 +1,26 @@
 package ca.uqac.mobile.feet_tracker.model.geo;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.function.BiConsumer;
 
 public class Track {
     private String uid;
     private String title;
     private Long duration;
+    private Long date;
     private HashMap<String,GeodesicLocation> locations;
 
     public Track() {
         //
     }
 
-    public Track(String uid, String title, Long duration){
+    public Track(String uid, String title, Long duration, Long date){
         this.uid = uid;
         this.title = title;
         this.duration = duration;
+        this.date = date;
     }
 
     public void addLocation(String k, GeodesicLocation loc){
@@ -42,6 +47,21 @@ public class Track {
         this.uid = uid;
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if(obj == this){
+            return true;
+        }
+
+        if(!(obj instanceof Track)){
+            return false;
+        }
+
+        Track track = (Track) obj;
+
+        return this.getUid().equals(track.getUid());
+    }
+
     public String getTitle() {
         return title;
     }
@@ -56,5 +76,9 @@ public class Track {
 
     public void setDuration(Long duration) {
         this.duration = duration;
+    }
+
+    public Date getDate(){
+        return new Date((this.date == null) ? 0 : this.date);
     }
 }

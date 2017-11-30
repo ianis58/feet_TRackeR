@@ -8,11 +8,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 import ca.uqac.mobile.feet_tracker.R;
-import ca.uqac.mobile.feet_tracker.android.activities.trainer.NewTrackStatsActivity;
-import ca.uqac.mobile.feet_tracker.android.activities.trainer.RecordActivity;
+import ca.uqac.mobile.feet_tracker.android.activities.trainer.TrackStatsActivity;
 import ca.uqac.mobile.feet_tracker.model.geo.Track;
 
 public class TrackAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
@@ -40,7 +42,7 @@ public class TrackAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
             public void onClick(View v) {
                 final Context context = v.getContext();
 
-                Intent intent = new Intent(context, NewTrackStatsActivity.class);
+                Intent intent = new Intent(context, TrackStatsActivity.class);
                 intent.putExtra("newTrackUid", track.getUid());
                 //intent.putExtra("newTrackTime", SystemClock.elapsedRealtime() - chronometerNewTrack.getBase());
                 context.startActivity(intent);
@@ -60,7 +62,7 @@ public class TrackAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
 
     public void deleteTrack(Track track) {
         int index = tracks.indexOf(track);
-        tracks.remove(index);
+        //tracks.remove(index);
         notifyItemRemoved(index);
     }
 
@@ -90,14 +92,13 @@ public class TrackAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
 
         private TextView title;
         private TextView duration;
-        private TextView locationsCount;
         private TextView date;
 
         public TrackViewHolder(View itemView) {
             super(itemView);
             title = (TextView) itemView.findViewById(R.id.trackTitle);
             duration = (TextView) itemView.findViewById(R.id.trackDuration);
-            locationsCount = (TextView) itemView.findViewById(R.id.trackLocationsCount);
+            //locationsCount = (TextView) itemView.findViewById(R.id.trackLocationsCount);
             date = (TextView) itemView.findViewById(R.id.trackDate);
         }
 
@@ -105,7 +106,18 @@ public class TrackAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
 
         void bind(Track track){
             title.setText(track.getTitle());
-            duration.setText(track.getDuration() != null ? track.getDuration().toString() : "");
+            String trackTimeString = "";
+
+            trackTimeString = String.format("%02d:%02d:%02d", TimeUnit.SECONDS.toHours(track.getDuration()),
+                    TimeUnit.SECONDS.toMinutes(track.getDuration()) % TimeUnit.HOURS.toMinutes(1),
+                    TimeUnit.SECONDS.toSeconds(track.getDuration()) % TimeUnit.MINUTES.toSeconds(1));
+
+            duration.setText(trackTimeString);
+            Date trackDate = track.getDate();
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+            SimpleDateFormat sdf2 = new SimpleDateFormat("HH:mm");
+            date.setText("le "+sdf.format(trackDate)+" à "+sdf2.format(trackDate));
+
         }
     }
 }

@@ -4,6 +4,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.os.IBinder;
 import android.os.PersistableBundle;
 import android.os.SystemClock;
@@ -12,8 +13,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.Chronometer;
-import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -31,12 +32,14 @@ import ca.uqac.mobile.feet_tracker.android.activities.login.LoginActivity;
 import ca.uqac.mobile.feet_tracker.android.services.trackrecorder.TrackRecorderBinder;
 import ca.uqac.mobile.feet_tracker.android.services.trackrecorder.TrackRecorderService;
 
+import static ca.uqac.mobile.feet_tracker.android.activities.devtools.DevToolsActivity.DEV_TOOLS_PREFS;
+
 public class RecordActivity extends AppCompatActivity {
     private static final String TAG = RecordActivity.class.getSimpleName();
 
     private Chronometer chronometerNewTrack;
-    private ImageButton endRecordNewTrack;
-    private ImageButton startRecordNewTrack;
+    private Button endRecordNewTrack;
+    private Button startRecordNewTrack;
     private SeekBar seekBarSamplingFrequency;
     private TextView tvSamplingFrequencyLabel;
 
@@ -111,10 +114,17 @@ public class RecordActivity extends AppCompatActivity {
         setContentView(R.layout.activity_record);
 
         chronometerNewTrack = (Chronometer) findViewById(R.id.chronometerNewTrack);
-        startRecordNewTrack = (ImageButton) findViewById(R.id.btnStartRecordNewTrack);
-        endRecordNewTrack = (ImageButton) findViewById(R.id.btnEndRecordNewTrack);
+        startRecordNewTrack = (Button) findViewById(R.id.btnStartRecordNewTrack);
+        endRecordNewTrack = (Button) findViewById(R.id.btnEndRecordNewTrack);
         seekBarSamplingFrequency = (SeekBar) findViewById(R.id.seekBarSamplingFrequency);
         tvSamplingFrequencyLabel = (TextView) findViewById(R.id.tvSamplingFrequencyLabel);
+
+        SharedPreferences devToolsPrefs = getSharedPreferences(DEV_TOOLS_PREFS, MODE_PRIVATE);
+        boolean showSamplingFrequency = devToolsPrefs.getBoolean("showSamplingFrequency", false);
+        if(!showSamplingFrequency){
+            seekBarSamplingFrequency.setVisibility(View.GONE);
+            tvSamplingFrequencyLabel.setVisibility(View.GONE);
+        }
 
         endRecordNewTrack.setVisibility(View.GONE);
 
@@ -211,7 +221,7 @@ public class RecordActivity extends AppCompatActivity {
     }
 
     private void showStats() {
-        Intent intent = new Intent(RecordActivity.this, NewTrackStatsActivity.class);
+        Intent intent = new Intent(RecordActivity.this, TrackStatsActivity.class);
         intent.putExtra("newTrackUid", newTrackUid);
         //intent.putExtra("newTrackTime", SystemClock.elapsedRealtime() - chronometerNewTrack.getBase());
         startActivity(intent);

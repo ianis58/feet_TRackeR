@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
+    android:layout_height="60dp"
     android:orientation="horizontal"
-    android:weightSum="10"
-    android:layout_height="45dp">
+    android:weightSum="100">
 
     <TextView
         android:id="@+id/trackTitle"
@@ -11,7 +11,7 @@
         android:layout_height="match_parent"
         android:layout_margin="0sp"
         android:layout_marginLeft="0sp"
-        android:layout_weight="6"
+        android:layout_weight="62"
         android:gravity="center_vertical|start"
         android:paddingLeft="10sp"
         android:text="titre" />
@@ -22,7 +22,7 @@
         android:layout_height="match_parent"
         android:layout_margin="0sp"
         android:layout_marginLeft="0sp"
-        android:layout_weight="1"
+        android:layout_weight="8"
         android:gravity="center_vertical|start"
         android:paddingLeft="10sp"
         android:text="01/01/17" />
@@ -33,20 +33,9 @@
         android:layout_height="match_parent"
         android:layout_margin="0sp"
         android:layout_marginLeft="0sp"
-        android:layout_weight="2"
+        android:layout_weight="30"
         android:gravity="center_vertical|start"
         android:paddingLeft="10sp"
         android:text="00:00:00" />
-
-    <TextView
-        android:id="@+id/trackLocationsCount"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:layout_margin="0sp"
-        android:layout_marginLeft="0sp"
-        android:layout_weight="1"
-        android:gravity="center_vertical|start"
-        android:paddingLeft="10sp"
-        android:text="10" />
 
 </LinearLayout>

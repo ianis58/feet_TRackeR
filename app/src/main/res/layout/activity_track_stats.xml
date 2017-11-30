@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="ca.uqac.mobile.feet_tracker.android.activities.trainer.NewTrackStatsActivity">
+    tools:context="ca.uqac.mobile.feet_tracker.android.activities.trainer.TrackStatsActivity">
 
 
     <LinearLayout
@@ -41,7 +41,7 @@
             android:inputType="textPersonName" />
 
         <TextView
-            android:id="@+id/textView5"
+            android:id="@+id/tvTrackDurationLabel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginLeft="10sp"
@@ -54,12 +54,30 @@
             android:layout_height="wrap_content"
             android:layout_marginLeft="10sp"
             android:layout_marginRight="10sp"
-            android:text="00:43:12"
+            android:text="00:00:00"
             android:textAlignment="center"
             android:textSize="30sp" />
 
         <TextView
-            android:id="@+id/textView7"
+            android:id="@+id/tvTrackDateLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10sp"
+            android:layout_marginTop="30sp"
+            android:text="Date du trajet" />
+
+        <TextView
+            android:id="@+id/tvTrackDate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10sp"
+            android:layout_marginRight="10sp"
+            android:text="le 01/01/17 à 00:00"
+            android:textAlignment="center"
+            android:textSize="30sp" />
+
+        <TextView
+            android:id="@+id/tvTrackUidLabel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginLeft="10sp"
@@ -75,15 +93,6 @@
             android:text="uid du trajet"
             android:textAlignment="center"
             android:textSize="24sp" />
-
-        <Button
-            android:id="@+id/btnTerminer"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="30sp"
-            android:hapticFeedbackEnabled="true"
-            android:text="Modifier" />
 
     </LinearLayout>
 

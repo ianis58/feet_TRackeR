@@ -28,21 +28,23 @@
         android:textAlignment="center"
         android:textSize="65sp" />
 
-    <ImageButton
+    <Button
         android:id="@+id/btnStartRecordNewTrack"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
+        android:layout_marginEnd="20sp"
+        android:layout_marginStart="20sp"
         android:layout_marginTop="30sp"
-        android:src="@drawable/start_track_recording" />
+        android:text="Démarrer l'enregistrement" />
 
-    <ImageButton
+    <Button
         android:id="@+id/btnEndRecordNewTrack"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
+        android:layout_marginEnd="20sp"
+        android:layout_marginStart="20sp"
         android:layout_marginTop="30sp"
-        android:src="@drawable/stop_track_recording" />
+        android:text="Terminer l'enregistrement" />
 
     <TextView
         android:id="@+id/tvSamplingFrequencyLabel"
