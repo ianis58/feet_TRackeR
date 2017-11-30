@@ -12,6 +12,7 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 admin.initializeApp(functions.config().firebase);
 
+const Promise = require('promise');
 
 const MIN_WALK_SPEED = 0;//2.5;
 const MIN_RUN_SPEED = 8;
@@ -413,42 +414,87 @@ exports.newSegment = functions.database.ref('/segments/{segmentUID}')
 });
 
 exports.batchProcessAllSegments = functions.https.onRequest((req, res) => {
-  const roadGraphRef = admin.database().ref('/roadgraph');
+  const startWith = req.query.startwith;
   
-	return roadGraphRef.once('value', function (roadGraphSnapShot) {
+  console.log('startWith: ' + startWith);
+  
+  const startTime = (new Date()).getTime();
+
+  //Fetch all segments
+	const promSeg = admin.database().ref('/segments').once('value', function(segmentSnapshot) {});
+  
+  const promGraphData = admin.database().ref('/roadgraph').once('value', function (roadGraphSnapShot) {});
+
+  const promises = [promSeg, promGraphData];
+  return Promise.all(promises).then(function (ret) {
+    console.log("ret.length: " + ret.length);
+
+    const segmentSnapshot = ret[0];
+    const roadGraphSnapShot = ret[1];
+
+		var segments = segmentSnapshot.val();
+    
+    if (!segments) {
+      segments = {};
+    }
+    console.log('segments.length: ' + segments.length);
+
     var roadGraphData = roadGraphSnapShot.val();
     if (!roadGraphData) {
       roadGraphData = {};
     }
     
-    var segmentProcessed = 0;
-    var segmentSkipped = 0;
+    const result = {
+      processed: 0,
+      invalidSpeed: 0,
+      skipped: 0,
+      nextStartWith: "none"
+    };
     
-    //Iterate all segments
-    admin.database().ref('/segments').once('value', function(segmentSnapshot) {
-  		const segments = segmentSnapshot.val();
-      
-      if (segments) {
-        for (var segmentKey in segments) {
+    if (segments && roadGraphData) {
+      var started = !startWith;
+      for (var segmentKey in segments) {
+        //Check elapsed time:
+        const curTime = (new Date()).getTime();
+        const ellapsed = curTime - startTime;
+        
+        //Stop after 55 seconds to avoid timeout
+        if (ellapsed >= 55000) {
+          console.log('About to timeout, batch halted at key: ' + segmentKey);
+          result.nextStartWith = segmentKey;
+          console.log("Processed: " + result.processed + ", Invalid speed: " + result.invalidSpeed + ", Skipped: " + result.skipped);
+          res.send(result);
+          return;
+        }
+        
+        if (started || segmentKey == startWith) {
+          started = true;
+          
           console.log('batch processing segment: ' + segmentKey);
-
+  
           const segment = segments[segmentKey];
       		//Make sure speed makes sens
       		if (segment.speed >= MIN_WALK_SPEED && segment.speed < MAX_VEHICULE_SPEED) {
             const newParamSegment = myTools.getParametrizedSegmentFromSegment(segment);
         
       		  myTools.processSegment(roadGraphSnapShot, roadGraphData, newParamSegment, {origNodeKey: "", destNodeKey: ""});
-            segmentProcessed++;
+            result.processed++;
           }
           else {
-            segmentSkipped++;
+            result.invalidSpeed++;
           }
         }
+        else {
+            result.skipped++;
+        }
       }
-    });
+    }
+    else {
+      if (!segments) console.log("segments is undefined: (" + (typeof segments) + ") " + segments);
+      if (!roadGraphData) console.log("roadGraphData is undefined: (" + (typeof roadGraphData) + ") " + roadGraphData);
+    }
     
-    console.log("Processes: " + segmentProcessed + ", Skipped: " + segmentSkipped);
-    res.send("Processing... check logs...");
-    
-	});
+    console.log("Processed: " + result.processed + ", Invalid speed: " + result.invalidSpeed + ", Skipped: " + result.skipped);
+    res.send(result);
+  });
 });

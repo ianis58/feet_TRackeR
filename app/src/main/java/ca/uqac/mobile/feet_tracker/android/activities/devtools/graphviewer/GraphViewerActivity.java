@@ -10,6 +10,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.PolylineOptions;
@@ -68,8 +69,6 @@ public class GraphViewerActivity extends AppCompatActivity implements OnMapReady
 
                     final HashMap<String, Object> visited = new HashMap<>();
 
-                    LatLng latLng;
-
                     for (DataSnapshot nodeSnapshot : dataSnapshot.getChildren()) {
                         final GraphNode node = nodeSnapshot.getValue(GraphNode.class);
 
@@ -79,7 +78,15 @@ public class GraphViewerActivity extends AppCompatActivity implements OnMapReady
                         metricLocation.setEast(node.getEast());
                         metricLocation.setNorth(node.getNorth());
                         MTM7Converter.metricToGeodesic(metricLocation, geodesicLocation);
-                        latLng = new LatLng(geodesicLocation.getLatitude(), geodesicLocation.getLongitude());
+                        LatLng originLatLng = new LatLng(geodesicLocation.getLatitude(), geodesicLocation.getLongitude());
+
+                        //Add a 2 meter radius circle on each node
+                        mMap.addCircle(new CircleOptions()
+                                .center(originLatLng)
+                                .radius(2.0)
+                                .fillColor(Color.CYAN)
+                                .strokeWidth(0)
+                        );
 
                         for (Map.Entry<String, GraphRoad> roadEntry : node.getRoads().entrySet()) {
                             final String destKey = roadEntry.getKey();
@@ -94,16 +101,16 @@ public class GraphViewerActivity extends AppCompatActivity implements OnMapReady
                                         .geodesic(false)
                                         .color(Color.BLUE);
 
-                                polylineOptions.add(latLng);
-                                boundsBuilder.include(latLng);
+                                polylineOptions.add(originLatLng);
+                                boundsBuilder.include(originLatLng);
 
                                 metricLocation.setEast(metricLocation.getEast() + (graphRoad.getDirX() * graphRoad.getDistance()));
                                 metricLocation.setNorth(metricLocation.getNorth() + (graphRoad.getDirY() * graphRoad.getDistance()));
                                 MTM7Converter.metricToGeodesic(metricLocation, geodesicLocation);
-                                latLng = new LatLng(geodesicLocation.getLatitude(), geodesicLocation.getLongitude());
+                                final LatLng destLatLng = new LatLng(geodesicLocation.getLatitude(), geodesicLocation.getLongitude());
 
-                                polylineOptions.add(latLng);
-                                boundsBuilder.include(latLng);
+                                polylineOptions.add(destLatLng);
+                                boundsBuilder.include(destLatLng);
 
                                 mMap.addPolyline(polylineOptions);
                             }
