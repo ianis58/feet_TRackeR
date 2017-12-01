@@ -6,18 +6,16 @@
     android:layout_height="match_parent"
     tools:context="ca.uqac.mobile.feet_tracker.android.activities.trainer.TrackStatsActivity">
 
-
     <LinearLayout
+        android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
-
+        android:layout_height="wrap_content">
         <TextView
             android:id="@+id/tvActivityTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10sp"
-            android:text="Résumé du trajet"
+            android:text="@string/tv_track_stats_title"
             android:textAlignment="center"
             android:textSize="30sp"
             android:textStyle="bold" />
@@ -37,7 +35,7 @@
             android:layout_marginLeft="10sp"
             android:layout_marginRight="10sp"
             android:ems="10"
-            android:hint="nommez votre trajet"
+            android:hint="@string/name_your_track"
             android:inputType="textPersonName" />
 
         <TextView
@@ -46,7 +44,7 @@
             android:layout_height="wrap_content"
             android:layout_marginLeft="10sp"
             android:layout_marginTop="30sp"
-            android:text="Durée du trajet" />
+            android:text="@string/track_duration" />
 
         <TextView
             android:id="@+id/tvTrackDuration"
@@ -54,7 +52,7 @@
             android:layout_height="wrap_content"
             android:layout_marginLeft="10sp"
             android:layout_marginRight="10sp"
-            android:text="00:00:00"
+            android:text="@string/track_duration_chrono_zero"
             android:textAlignment="center"
             android:textSize="30sp" />
 
@@ -82,7 +80,7 @@
             android:layout_height="wrap_content"
             android:layout_marginLeft="10sp"
             android:layout_marginTop="30sp"
-            android:text="Identifiant unique du trajet" />
+            android:text="@string/tv_track_uid" />
 
         <TextView
             android:id="@+id/tvTrackUid"
@@ -90,9 +88,18 @@
             android:layout_height="wrap_content"
             android:layout_marginLeft="10sp"
             android:layout_marginRight="10sp"
-            android:text="uid du trajet"
+            android:text="@string/tv_track_uid_default_value"
             android:textAlignment="center"
             android:textSize="24sp" />
+
+        <fragment xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:map="http://schemas.android.com/apk/res-auto"
+            xmlns:tools="http://schemas.android.com/tools"
+            android:id="@+id/mapTrack"
+            android:name="com.google.android.gms.maps.SupportMapFragment"
+            android:layout_width="match_parent"
+            android:layout_height="300dp"
+            tools:context="ca.uqac.mobile.feet_tracker.android.activities.trainer.TrackStatsActivity" />
 
     </LinearLayout>
 

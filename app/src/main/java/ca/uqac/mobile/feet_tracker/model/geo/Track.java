@@ -3,17 +3,15 @@ package ca.uqac.mobile.feet_tracker.model.geo;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.function.BiConsumer;
 
 public class Track {
     private String uid;
     private String title;
     private Long duration;
     private Long date;
-    private HashMap<String,GeodesicLocation> locations;
+    private HashMap<String,Segment> segments;
 
     public Track() {
-        //
     }
 
     public Track(String uid, String title, Long duration, Long date){
@@ -23,20 +21,12 @@ public class Track {
         this.date = date;
     }
 
-    public void addLocation(String k, GeodesicLocation loc){
-        locations.put(k, loc);
+    public int getSegmentsCount(){
+        return segments.size();
     }
 
-    public int getLocationsCount(){
-        return locations.size();
-    }
-
-    public HashMap<String,GeodesicLocation> getLocations(){
-        return locations;
-    }
-
-    public void setLocations(HashMap<String, GeodesicLocation> locations) {
-        this.locations = locations;
+    public HashMap<String,Segment> getSegments(){
+        return segments;
     }
 
     public String getUid() {
@@ -80,5 +70,11 @@ public class Track {
 
     public Date getDate(){
         return new Date((this.date == null) ? 0 : this.date);
+    }
+
+    public String getStringDate() {
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+        SimpleDateFormat sdf2 = new SimpleDateFormat("HH:mm");
+        return "le " + sdf.format(date) + " à " + sdf2.format(date);
     }
 }
