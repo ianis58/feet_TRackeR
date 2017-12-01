@@ -28,5 +28,7 @@
     <string name="track_duration_chrono_zero">00:00:00</string>
     <string name="tv_track_uid">Identifiant unique du trajet</string>
     <string name="tv_track_uid_default_value">uid du trajet</string>
+    <string name="tv_track_speed_label">Vitesse moyenne du trajet</string>
+    <string name="tv_track_speed_default_value">0km/h</string>
 
 </resources>

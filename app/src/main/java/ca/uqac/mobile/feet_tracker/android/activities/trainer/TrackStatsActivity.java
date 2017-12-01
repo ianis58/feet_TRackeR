@@ -30,6 +30,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.ValueEventListener;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
@@ -50,11 +51,13 @@ public class TrackStatsActivity extends AppCompatActivity implements OnMapReadyC
     private TextView tvTrackUid;
     private TextView tvTrackUidLabel;
     private TextView tvTrackDate;
+    private TextView tvTrackSpeed;
 
     private String newTrackUid;
     private String userUid;
     private Long newTrackTimeMillis;
     private String newTrackTimeString;
+    private ArrayList<Double> speeds;
 
     private FirebaseDatabase database;
     private DatabaseReference tracksRef;
@@ -101,6 +104,9 @@ public class TrackStatsActivity extends AppCompatActivity implements OnMapReadyC
         tvTrackUid = (TextView) findViewById(R.id.tvTrackUid);
         tvTrackUidLabel = (TextView) findViewById(R.id.tvTrackUidLabel);
         tvTrackDate = (TextView) findViewById(R.id.tvTrackDate);
+        tvTrackSpeed = (TextView) findViewById(R.id.tvTrackSpeed);
+
+        speeds = new ArrayList<>();
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -230,10 +236,15 @@ public class TrackStatsActivity extends AppCompatActivity implements OnMapReadyC
                 //Bounds to ensure the map will show everything
                 final LatLngBounds.Builder boundsBuilder = LatLngBounds.builder();
 
+
+
                 for (DataSnapshot segmentSnapshot : dataSnapshot.getChildren()) {
                     final Segment segment = segmentSnapshot.getValue(Segment.class);
 
                     final double speed = segment.getSpeed();
+
+                    speeds.add(speed);
+
                     final int color;
                     if (speed < Segment.MIN_WALK_SPEED) {
                         color = Color.BLACK;
@@ -273,6 +284,21 @@ public class TrackStatsActivity extends AppCompatActivity implements OnMapReadyC
                 }
 
                 mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), 50));
+
+                //computing harmonic mean of all segments speeds in order to show track mean speed
+                int numerateur = speeds.size();//n
+                double denominateur = 0.0;
+                for(Double speed : speeds){
+                    if(speed != 0) {
+                        denominateur += 1 / speed;
+                    }
+                }
+                double harmonicMean = (double)numerateur / denominateur;
+
+                double scale = Math.pow(10, 1);//1 decimal only
+                harmonicMean = Math.round(harmonicMean * scale) / scale;
+
+                tvTrackSpeed.setText(harmonicMean + "km/h");
             }
 
             @Override
