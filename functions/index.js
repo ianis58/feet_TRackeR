@@ -111,14 +111,17 @@ const myTools = {
     //Create node data
     const node = {
       east: coordinate.x,
-      north: coordinate.y
+      north: coordinate.y,
+      coord: coordinate
     };
     
-    //Insert new node and fetch's it's key
-    const key = roadGraphSnapShot.ref.push(node).key;
+    //Insert new node (insert only east and north) and fetch's it's key
+    const key = roadGraphSnapShot.ref.push({
+      east: node.east, 
+      north: node.north
+    }).key;
 
-    //Don't forget to compute node's coordinate
-    node.coord = new myTools.vector(node.east, node.north);
+    console.log("Created node: " + key);
 
     //Update local model
     roadGraphData[key] = node;
@@ -158,6 +161,8 @@ const myTools = {
     //Then update database model
     roadGraphSnapShot.ref.child(fromKey + '/roads/' + toKey).set(road1);
     roadGraphSnapShot.ref.child(toKey + '/roads/' + fromKey).set(road2);
+
+    console.log("Created road between " + fromKey + " and " + toKey);
   },
   
 	processSegment: function(roadGraphSnapShot, roadGraphData, newParamSegment, knownEndPoints) {
@@ -789,8 +794,12 @@ exports.batchProcessAllSegments = functions.https.onRequest((req, res) => {
     };
     
     if (segments && roadGraphData) {
+      if (roadGraphData._____abc) {
+        delete roadGraphData._____abc;
+      }
+    
       //Precompute all graph's coordinates
-      myTools.computeGraphCoords(graph);
+      myTools.computeGraphCoords(roadGraphData);
 
       var started = !startWith;
       for (var segmentKey in segments) {
@@ -816,6 +825,7 @@ exports.batchProcessAllSegments = functions.https.onRequest((req, res) => {
       		//Make sure speed makes sens
       		if (segment.speed >= MIN_WALK_SPEED && segment.speed < MAX_VEHICULE_SPEED) {
             const newParamSegment = myTools.getParametrizedSegmentFromSegment(segment);
+            
         
       		  myTools.processSegment(roadGraphSnapShot, roadGraphData, newParamSegment, {origNodeKey: "", destNodeKey: ""});
             result.processed++;

@@ -115,11 +115,6 @@ public class RouterActivity extends AppCompatActivity implements OnMapReadyCallb
             placesFrom.setText(getString(R.string.router_actuel_location));
 
             refreshMap();
-
-            LatLngBounds bounds = new LatLngBounds.Builder().include(mLastKnownPos).build();
-
-            placesFrom.setBoundsBias(bounds);
-            placesTo.setBoundsBias(bounds);
         }
         else {
             mLastKnownPos = initalLatLng;
@@ -176,6 +171,17 @@ public class RouterActivity extends AppCompatActivity implements OnMapReadyCallb
 
         initFirstMapLocation(currentLatLng);
 
+        //Update places search bias
+        LatLngBounds bounds = new LatLngBounds.Builder().include(mLastKnownPos).build();
+        if (placesFrom != null) {
+            placesFrom.setBoundsBias(bounds);
+        }
+        if (placesTo != null) {
+            placesTo.setBoundsBias(bounds);
+        }
+
+
+        //Update current postion marker position
         if (currentPosMarker != null) {
             currentPosMarker.setPosition(currentLatLng);
         }
@@ -529,6 +535,8 @@ public class RouterActivity extends AppCompatActivity implements OnMapReadyCallb
                 .enableAutoManage(this, placesFailedListener)
                 .build();
 
+
+        updateOrientation(getResources().getConfiguration().orientation);
     }
 
     @Override

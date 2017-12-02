@@ -69,10 +69,17 @@ public class GraphViewerActivity extends AppCompatActivity implements OnMapReady
 
                     final HashMap<String, Object> visited = new HashMap<>();
 
-                    for (DataSnapshot nodeSnapshot : dataSnapshot.getChildren()) {
-                        final GraphNode node = nodeSnapshot.getValue(GraphNode.class);
+                    final HashMap<String, GraphNode> nodes = new HashMap<>();
 
-                        final String origKey = nodeSnapshot.getKey();
+                    for (DataSnapshot nodeSnapshot : dataSnapshot.getChildren()) {
+                        final String nodeKey = nodeSnapshot.getKey();
+                        final GraphNode node = nodeSnapshot.getValue(GraphNode.class);
+                        nodes.put(nodeKey, node);
+                    }
+
+                    for (Map.Entry<String, GraphNode> entry : nodes.entrySet()) {
+                        final String origKey = entry.getKey();
+                        final GraphNode node = entry.getValue();
 
                         //Convert metric coordinates to geodesic coordinate
                         metricLocation.setEast(node.getEast());
@@ -80,10 +87,10 @@ public class GraphViewerActivity extends AppCompatActivity implements OnMapReady
                         MTM7Converter.metricToGeodesic(metricLocation, geodesicLocation);
                         LatLng originLatLng = new LatLng(geodesicLocation.getLatitude(), geodesicLocation.getLongitude());
 
-                        //Add a 2 meter radius circle on each node
+                        //Add a 5 meter radius circle on each node
                         mMap.addCircle(new CircleOptions()
                                 .center(originLatLng)
-                                .radius(2.0)
+                                .radius(5.0)
                                 .fillColor(Color.CYAN)
                                 .strokeWidth(0)
                         );
@@ -104,8 +111,16 @@ public class GraphViewerActivity extends AppCompatActivity implements OnMapReady
                                 polylineOptions.add(originLatLng);
                                 boundsBuilder.include(originLatLng);
 
-                                metricLocation.setEast(metricLocation.getEast() + (graphRoad.getDirX() * graphRoad.getDistance()));
-                                metricLocation.setNorth(metricLocation.getNorth() + (graphRoad.getDirY() * graphRoad.getDistance()));
+                                if (nodes.containsKey(destKey)) {
+                                    final GraphNode destNode = nodes.get(destKey);
+                                    metricLocation.setEast(destNode.getEast());
+                                    metricLocation.setNorth(destNode.getNorth());
+                                }
+                                else {
+                                    metricLocation.setEast(metricLocation.getEast() + (graphRoad.getDirX() * graphRoad.getDistance()));
+                                    metricLocation.setNorth(metricLocation.getNorth() + (graphRoad.getDirY() * graphRoad.getDistance()));
+                                }
+
                                 MTM7Converter.metricToGeodesic(metricLocation, geodesicLocation);
                                 final LatLng destLatLng = new LatLng(geodesicLocation.getLatitude(), geodesicLocation.getLongitude());
 

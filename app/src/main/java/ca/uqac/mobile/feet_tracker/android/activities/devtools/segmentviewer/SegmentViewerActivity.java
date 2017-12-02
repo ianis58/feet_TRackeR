@@ -26,6 +26,8 @@ import ca.uqac.mobile.feet_tracker.model.geo.Segment;
 import ca.uqac.mobile.feet_tracker.tools.MTM7Converter;
 
 public class SegmentViewerActivity extends AppCompatActivity implements OnMapReadyCallback {
+    private static final double MAX_DURATION = 15.0;
+    private static final double MAX_DISTANCE = 350.0;
 
     private GoogleMap mMap;
 
@@ -65,6 +67,9 @@ public class SegmentViewerActivity extends AppCompatActivity implements OnMapRea
             case R.id.devtool_segmentviewer_clean_invalid:
                 deleteOffRangeSegments(Segment.MIN_WALK_SPEED, Segment.MAX_VEHICULE_SPEED);
                 break;
+            case R.id.devtool_segmentviewer_find_too_long: {
+                findTooLongSegments(MAX_DURATION, MAX_DISTANCE);
+            }
         }
         return super.onOptionsItemSelected(item);
     }
@@ -98,9 +103,93 @@ public class SegmentViewerActivity extends AppCompatActivity implements OnMapRea
         });
     }
 
+    private void findTooLongSegments(final double maxDuration, final double maxDistance) {
+        mMap.clear();
+
+        segmentsRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                //Bounds to ensure the map will show everything
+                final LatLngBounds.Builder boundsBuilder = LatLngBounds.builder();
+                boolean segmentShown = false;
+
+                for (DataSnapshot segmentSnapshot : dataSnapshot.getChildren()) {
+                    final String segmentKey = segmentSnapshot.getKey();
+                    final Segment segment = segmentSnapshot.getValue(Segment.class);
+
+                    //Find speed and compute both distance and duration
+                    final double speed = segment.getSpeed();
+                    final double deltaEast = segment.getOrigin().getEast() - segment.getDestination().getEast();
+                    final double deltaNorth = segment.getOrigin().getNorth() - segment.getDestination().getNorth();
+                    final double distance = Math.sqrt(deltaEast*deltaEast + deltaNorth*deltaNorth);
+                    final double duration = (speed > 0) ? distance / speed : Double.MAX_VALUE;
+
+                    final int color;
+                    final boolean showSegment;
+                    if (distance > maxDistance && duration > maxDuration) {
+                        //Inalid for both distance and duration
+                        color = Color.RED;
+                        showSegment = true;
+                    }
+                    else if (distance > maxDistance) {
+                        //Invalid on distance only
+                        color = 0xffff4500;
+                        showSegment = true;
+                    }
+                    else if (duration > maxDuration) {
+                        //Invalid on duration only
+                        color = Color.YELLOW;
+                        showSegment = true;
+                    }
+                    else {
+                        color = Color.BLACK;
+                        showSegment = false;
+                    }
+                    if (showSegment) {
+                        segmentShown = true;
+
+                        PolylineOptions polylineOptions = new PolylineOptions()
+                                .clickable(true)
+                                .geodesic(false)
+                                .color(color);
+
+                        LatLng latLng;
+
+                        //Convert metric coordinates to geodesic coordinate
+                        MTM7Converter.metricToGeodesic(segment.getOrigin(), geodesicLocation);
+                        latLng = new LatLng(geodesicLocation.getLatitude(), geodesicLocation.getLongitude());
+                        polylineOptions.add(latLng);
+                        boundsBuilder.include(latLng);
+
+                        MTM7Converter.metricToGeodesic(segment.getDestination(), geodesicLocation);
+                        latLng = new LatLng(geodesicLocation.getLatitude(), geodesicLocation.getLongitude());
+                        polylineOptions.add(latLng);
+                        boundsBuilder.include(latLng);
+
+                        mMap.addPolyline(polylineOptions);
+                    }
+                }
+
+                if (segmentShown) {
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), 50));
+                }
+                else {
+                    Toast.makeText(SegmentViewerActivity.this, "No segment found", Toast.LENGTH_LONG).show();
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+    }
+
     private final GeodesicLocation geodesicLocation = new GeodesicLocation();
 
     private void refreshMap() {
+        mMap.clear();
+
         segmentsRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {

@@ -62,7 +62,8 @@
 
         <activity
             android:name=".android.activities.router.RouterActivity"
-            android:label="@string/router_activity_title">
+            android:label="@string/router_activity_title"
+            android:configChanges="orientation|screenSize">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="ca.uqac.mobile.feet_tracker.android.activities.tracker.TrackerActivity" />

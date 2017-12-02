@@ -8,4 +8,10 @@
         android:title="Effacer les segments invalides"
         app:showAsAction="never" />
 
+    <item
+        android:id="@+id/devtool_segmentviewer_find_too_long"
+        android:orderInCategory="100"
+        android:title="Trouver les segments trop longs"
+        app:showAsAction="never" />
+
 </menu>
