@@ -14,7 +14,7 @@ admin.initializeApp(functions.config().firebase);
 
 const Promise = require('promise');
 
-const MIN_WALK_SPEED = 0;//2.5;
+const MIN_WALK_SPEED = 2.5;
 const MIN_RUN_SPEED = 8;
 const MIN_VEHICULE_SPEED = 20;
 const MAX_VEHICULE_SPEED = 80;
@@ -43,17 +43,19 @@ const MAX_VEHICULE_SPEED = 80;
 	"east" : double
 	"north" : double
   "roads" : {
-    "roadUID" : {
-      "connectedUID" : intersectionUID,
-      "distance" : double,
+    "{connectedIntersectionUID}" : {
       "dirX" : double,
       "dirY" : double
+      "distance": double
     }, ...
   }
 }
 */
 
 const myTools = {
+  TYPE_MISSING: 0,
+  TYPE_APPROX: 1,
+  TYPE_REAL: 2,
   vector: function(x, y) {
     this.init(x, y);
   },
@@ -75,17 +77,9 @@ const myTools = {
       new myTools.vector(segment.destination.east, segment.destination.north)
     );
   },
-  distanceTolerance: 2.0, //About 2 meters
+  distanceTolerance: 5.0, //meters
+  missingTolerance: 50.0, //meters
   findIntersection: function(seg1, seg2) {
-    /*Segment has the following structure:
-    {
-      origin: vector,
-      destination: vector,
-      normale: vector (direction from 'origin' to 'destination',
-      distance: double (distance along normale direction to go from 'origin' to 'destination')
-    }
-    */
-
     //Pre compute a few useful datas
     const UxV = seg1.normale.crossProduct(seg2.normale);
     const QmP = seg2.origin.sub(seg1.origin);
@@ -168,9 +162,7 @@ const myTools = {
     const knownDest = !!knownEndPoints.destNodeKey;
     
     if (!knownOrig || !knownDest) {
-      var origNodeKey = knownEndPoints.origNodeKey;
       var origClosestDistance = knownOrig ? -1 : myTools.distanceTolerance * 2;
-      var destNodeKey = knownEndPoints.destNodeKey;
       var destClosestDistance = knownDest ? -1 : myTools.distanceTolerance * 2;
       for (var nodeKey in roadGraphData) {
         const testNode = roadGraphData[nodeKey];
@@ -179,25 +171,23 @@ const myTools = {
         const nodeCoord = new myTools.vector(testNode.east, testNode.north);
         
         //Compute distance to origin and destination
-        const distToOrig = nodeCoord.sub(newParamSegment.origin).length();
-        const distToDest = nodeCoord.sub(newParamSegment.destination).length();
+        const distToOrig = nodeCoord.distance(newParamSegment.origin);
+        const distToDest = nodeCoord.distance(newParamSegment.destination);
         
         if (distToOrig < origClosestDistance && distToOrig < myTools.distanceTolerance) {
           //Origin is closer to that node
-          origNodeKey = nodeKey;
+          knownEndPoints.origNodeKey = nodeKey;
           origClosestDistance = distToOrig;
         }
         if (distToDest < destClosestDistance && distToDest < myTools.distanceTolerance) {
           //Origin is closer to that node
-          destNodeKey = nodeKey;
+          knownEndPoints.destNodeKey = nodeKey;
           destClosestDistance = distToDest;
         }
         
         //That's it, try another node
       }
       //All nodes are tested
-      knownEndPoints.origNodeKey = origNodeKey;
-      knownEndPoints.destNodeKey = destNodeKey;
     }
 
     //Second pass, find intersection
@@ -245,7 +235,7 @@ const myTools = {
                   const nodeCoord = new myTools.vector(interNode.east, interNode.north);
                   
                   //Compute distance to intersection
-                  const distToInter = nodeCoord.sub(intersection).length();
+                  const distToInter = nodeCoord.distance(intersection);
                   
                   if (distToInter < interClosestDistance && distToInter < myTools.distanceTolerance) {
                     //Intersection is closer to that node
@@ -342,9 +332,343 @@ const myTools = {
     }
     //Doesn't really matter if it already exist, it will be replaced with same values
     myTools.createRoad(roadGraphSnapShot, roadGraphData, knownEndPoints.origNodeKey, knownEndPoints.destNodeKey);
-	}
+	},
+  
+  
+  aStar: function(graph, fromNode, toNode) {
+    //Returns an array of the path (might not lead to "toNode")
+    //NOTE: graph[key].coord (vector) must be computed before calling this function
+    //NOTE: only graph[key].enabled = true will be considered
+    
+    const endNode = graph[toNode];
+    
+    //Initialize A*
+
+    //Nodes are not accepted yet, and distance to start is unknown (infinity) and not connected to anything
+    for (var nodeKey in graph) {
+      const node = graph[nodeKey];
+      if (node.enabled) {
+        node.accepted = false;
+        node.connectedTo = "";
+        node.distToStart = Infinity;
+        node.distToEnd = node.coord.distance(endNode.coord);
+      }
+    }
+    
+    //Except for start node
+    const startNode = graph[fromNode];
+    startNode.accepted = true; //Start node is in accepted set
+    startNode.distToStart = 0; //Obviously, distance from start to start is 0
+    if (startNode.roads) {
+      //For all start's connected nodes, we know their initial best distance to start
+      for (var destKey in startNode.roads) {
+        if (destKey != fromNode) {
+          const destNode = graph[destKey];
+          if (destNode.enabled) {
+            destNode.distToStart = startNode.roads[destKey].distance;
+            destNode.connectedTo = fromNode;
+          }
+        }
+      }
+    }
+    
+    //Iterate until we select "toNode", or we can't select a non Infinity node
+    var lastSelectedNodeKey = fromNode;
+    while (true) {
+      //Refresh distanceFromStartToEnd for each node
+      for (var nodeKey in graph) {
+        const node = graph[nodeKey];
+        if (node.enabled) {
+          node.distFromStartToEnd = node.distToStart + node.distToEnd;
+        }
+      }
+
+      //Select unaccepted node with smallest distFromStartToEnd
+      var selectedNodeKey = "";
+      var selectedNode = null;
+      for (var nodeKey in graph) {
+        var node = graph[nodeKey];
+        if (node.enabled) {
+          if (!node.accepted) {
+            if (!selectedNode || node.distFromStartToEnd < selectedNode.distFromStartToEnd) {
+              selectedNodeKey = nodeKey;
+              selectedNode = node;
+            }
+          }
+        }
+      }
+      
+      //No node selectd?
+      if (!selectedNode) {
+        break;
+      }
+      else if (selectedNode.distFromStartToEnd == Infinity) {
+        //Closest node is not connected to anything else?
+        break;
+      }
+      lastSelectedNodeKey = selectedNodeKey;
+
+      if (selectedNodeKey == toNode) {
+        //We reached toNode
+        break;
+      }
+      else {
+        //We accept selectedNodeKey
+        selectedNode.accepted = true;
+
+        //Iterate all nodes connected to selectedNode
+        if (selectedNode.roads) {
+          for (var connectedKey in selectedNode.roads) {
+            if (connectedKey != selectedNodeKey) {
+              const connectedNode = graph[connectedKey];
+              if (connectedNode.enabled) {
+                const road = selectedNode.roads[connectedKey];
+    
+                const newDistToStart = selectedNode.distToStart + road.distance;
+    
+                if (newDistToStart >= connectedNode.distToStart) {
+                  //We do nothing
+                }
+                else {
+                  //Replace connected distToStart and reject connected node
+                  connectedNode.connectedTo = selectedNodeKey;
+                  connectedNode.distToStart = newDistToStart;
+                  connectedNode.accepted = false;
+                }
+              }
+            }
+          }
+        }
+      }
+
+    }//End of iteration
+    
+    var returnNodes = [];
+    
+    var pathNode = lastSelectedNodeKey;
+    var i = 0;
+    while (pathNode) {
+      ++i;
+      //Since we start by the end, we must insert at the begining (unshift and not push)
+      returnNodes.unshift(pathNode);
+      pathNode = graph[pathNode].connectedTo;
+    }
+    
+    return returnNodes;
+  },
+  
+  typeFromDistance: function(distance) {
+    if (distance > myTools.missingTolerance) {
+      return myTools.TYPE_MISSING;
+    }
+    else if (distance > myTools.distanceTolerance) {
+      return myTools.TYPE_APPROX;
+    }
+    else {
+      return myTools.TYPE_REAL;
+    }
+  },
+  
+  enableNodesConnectedToKey: function(graph, key) {
+      //Untouch every node
+      for (var nodeKey in graph) {
+        const node = graph[nodeKey];
+        node.touched = 0;
+      }
+      //But the starting key
+      graph[key].touched = 1;
+      
+      //Touch every connected node until we are unable to touch another one
+      var touched = true;
+      while (touched) {
+        touched = false;
+        for (var nodeKey in graph) {
+          const node = graph[nodeKey];
+          
+          if (node.touched == 1) {
+            node.touched = 2;
+            if (node.roads) {
+              for (var connectedNodeKey in node.roads) {
+                const connectedNode = graph[connectedNodeKey];
+                
+                if (connectedNode.touched == 0) {
+                  connectedNode.touched = 1;
+                  touched = true;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      //Disable untouched nodes
+      for (var nodeKey in graph) {
+        const node = graph[nodeKey];
+        
+        if (node.touched == 0) {
+          node.enabled = false;
+        }
+      }
+  },
+  
+  findOptimalPath: function(graph, fromCoord, toCoord) {
+
+    var path = {
+      start: {
+        east: fromCoord.x,
+        north: fromCoord.y
+      },
+      paths: [
+        /*
+        {
+          east: double,
+          north: double,
+          distance: double,
+          type: (0=TYPE_MISSING, 1=TYPE_APPROX, 2=TYPE_REAL)
+        }, ...
+        */
+      ],
+      distance: 0
+    };
+    
+    var lastCoord = fromCoord;
+    const addCoord = function(coord, type) {
+      //New segment's distance
+      const dist = coord.distance(lastCoord);
+      lastCoord = coord;
+      
+      //Add new coordinate
+      path.paths.push({
+        east: coord.x,
+        north: coord.y,
+        distance: dist,
+        type: type
+      });
+      
+      //Inc total distance
+      path.distance += dist;
+    };
+
+    //Find closest fromNodeKey and toNode
+    var closestFromDistance = 0;
+    var fromNodeKey = "";
+    var closestToDistance = 0;
+    var toNodeKey = "";
+    
+    for (var nodeKey in graph) {
+      const node = graph[nodeKey];
+      
+      //Make a vector out of node's coordinates
+      node.coord = new myTools.vector(node.east, node.north);
+      node.enabled = true;
+    
+      //Compute distance to fromCoord and toCoord
+      const fromDistance = node.coord.distance(fromCoord);
+      const toDistance = node.coord.distance(toCoord);
+
+      if (!fromNodeKey || fromDistance < closestFromDistance) {
+        closestFromDistance = fromDistance;
+        fromNodeKey = nodeKey;
+      }
+      if (!toNodeKey || toDistance < closestToDistance) {
+        closestToDistance = toDistance;
+        toNodeKey = nodeKey;
+      }
+    }
+    
+    if (fromNodeKey && toNodeKey) {
+    
+      //Execute A* algorithm recursivly until we find a path
+      var currentNodeKey = fromNodeKey;
+      while (currentNodeKey != toNodeKey) {
+
+        //Enable only nodes connected to currentNodeKey
+        myTools.enableNodesConnectedToKey(graph, currentNodeKey);      
+      
+        const currentNode = graph[currentNodeKey];
+        //Add currentNodeKey to path, TYPE based on distance from lastCoord
+        const distance = currentNode.coord.distance(lastCoord);
+        addCoord(currentNode.coord, myTools.typeFromDistance(distance));
+
+        //Is it possible to reach 'toNodeKey' directly?'
+        var aStarEndKey = toNodeKey;
+        if (graph[toNodeKey].enabled) {
+          //Yes, we will find a path
+          console.log('toNodeKey enabled, we will find a path to it');
+        }
+        else {
+          //Find the enabled node that is closest to our target key
+          const endCoord = graph[toNodeKey].coord;
+          var closest = Infinity;
+          for (var nodeKey in graph) {
+            var node = graph[nodeKey];
+            
+            if (node.enabled) {
+              //Compute distance to endCoord
+              const distance = node.coord.distance(endCoord);
+              if (distance < closest) {
+                closest = distance;
+                aStarEndKey = nodeKey;
+              }
+            }
+          }
+          
+        }
+        
+        //Execute A* to find a path (hopefuly) up to 'toNodeKey'
+        var returnedNodes = myTools.aStar(graph, currentNodeKey, aStarEndKey);
+
+        currentNodeKey = returnedNodes.length > 0 ? returnedNodes[returnedNodes.length-1] : "";
+  
+        //Add found (REAL) coordinates (except the first one, already added)
+        for (var index in returnedNodes) {
+          if (index > 0) {
+            pathNode = returnedNodes[index];
+            const node = graph[pathNode];
+            
+            addCoord(node.coord, myTools.TYPE_REAL);
+          }
+        }
+        
+        if (currentNodeKey != toNodeKey) {
+          //We're still not at destination
+        
+          //Considering only disabled nodes closer to end then "currentNode",
+          //find the one closer to "currentNodeKey"
+          
+          const currentNode = graph[currentNodeKey];
+          var closestDistToCurrent = Infinity;
+          for(var nodeKey in graph) {
+            const node = graph[nodeKey];
+            
+            //Closer to "toNodeKey" then "currentNode" (considere toNodeKey too)
+            if (nodeKey == toNodeKey || (!node.enable && node.distToEnd < currentNode.distToEnd)) {
+              //Compute distance to currentNode
+              const distance = node.coord.distance(currentNode.coord);
+              
+              if (distance < closestDistToCurrent) {
+                closestDistToCurrent = distance;
+                currentNodeKey = nodeKey; //NOTE: instead of using a "closestKey", we replace currentNodeKey directly
+              }
+            }
+          }
+        }
+        
+      } //End of loop
+
+      //Add final toCoord (closestToDistance computed at the beginning)
+      addCoord(toCoord, myTools.typeFromDistance(closestToDistance));
+    }
+    else {
+      //Should only happen if graph is empty
+      addCoord(toCoord, myTools.TYPE_MISSING);
+    }
+    
+    return path;
+  }
 };
 
+//Vector class
 myTools.vector.prototype = {
   x: 0,
   y: 0,
@@ -381,6 +705,11 @@ myTools.vector.prototype = {
     else {
       return new myTools.vector(0, 0);
     }
+  },
+  distance: function(other) {
+    const deltaX = other.x - this.x;
+    const deltaY = other.y - this.y;
+    return Math.sqrt(deltaX * deltaX + deltaY * deltaY);
   }
 };
 
@@ -401,11 +730,11 @@ exports.newSegment = functions.database.ref('/segments/{segmentUID}')
       const roadGraphRef = admin.database().ref('/roadgraph');
       
 			return roadGraphRef.once('value', function (roadGraphSnapShot) {
-        var roadGraphData = roadGraphSnapShot.val();
-        if (!roadGraphData) {
-          roadGraphData = {};
+        var graph = roadGraphSnapShot.val();
+        if (!graph) {
+          graph = {};
         }
-				myTools.processSegment(roadGraphSnapShot, roadGraphData, newParamSegment, {origNodeKey: "", destNodeKey: ""});
+				myTools.processSegment(roadGraphSnapShot, graph, newParamSegment, {origNodeKey: "", destNodeKey: ""});
 			});
 		}
 		else {
@@ -416,8 +745,6 @@ exports.newSegment = functions.database.ref('/segments/{segmentUID}')
 exports.batchProcessAllSegments = functions.https.onRequest((req, res) => {
   const startWith = req.query.startwith;
   
-  console.log('startWith: ' + startWith);
-  
   const startTime = (new Date()).getTime();
 
   //Fetch all segments
@@ -427,7 +754,6 @@ exports.batchProcessAllSegments = functions.https.onRequest((req, res) => {
 
   const promises = [promSeg, promGraphData];
   return Promise.all(promises).then(function (ret) {
-    console.log("ret.length: " + ret.length);
 
     const segmentSnapshot = ret[0];
     const roadGraphSnapShot = ret[1];
@@ -437,7 +763,6 @@ exports.batchProcessAllSegments = functions.https.onRequest((req, res) => {
     if (!segments) {
       segments = {};
     }
-    console.log('segments.length: ' + segments.length);
 
     var roadGraphData = roadGraphSnapShot.val();
     if (!roadGraphData) {
@@ -498,3 +823,33 @@ exports.batchProcessAllSegments = functions.https.onRequest((req, res) => {
     res.send(result);
   });
 });
+
+exports.findOptimalPath = functions.https.onRequest((req, res) => {
+  const params = (req.method == 'GET') ? req.query : req.body;
+
+  const fromEast = params.fromEast;
+  const fromNorth = params.fromNorth;
+  const toEast = params.toEast;
+  const toNorth = params.toNorth;
+  
+  if (fromEast && fromNorth && toEast && toNorth) {
+    return admin.database().ref('/roadgraph').once('value', function (roadGraphSnapShot) {
+      var roadGraphData = roadGraphSnapShot.val();
+      
+      if (!roadGraphData) {
+        roadGraphData = {};
+      }
+      const fromCoord = new myTools.vector(fromEast, fromNorth);
+      const toCoord = new myTools.vector(toEast, toNorth);
+      
+      const path = myTools.findOptimalPath(roadGraphData, fromCoord, toCoord);
+      
+      res.send(path);
+    });
+  }
+  else {
+    //Bad request
+    res.status(400).end();
+  }
+});
+
