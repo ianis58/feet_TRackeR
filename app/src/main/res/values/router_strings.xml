@@ -7,4 +7,7 @@
     <string name="router_actuel_location">Position actuelle</string>
     <string name="router_err_binder_getservice">Error initializing tracker, tracker Binder ok, but no service.</string>
     <string name="router_current_pos">Position actuelle</string>
+    <string name="router_error_fetch_path_title">Erreur à la récupération du trajet</string>
+    <string name="router_error_fetch_path_message">Une erreur est survenue en tentant de récupérer le trajet optimal. Voulez-vous réessayer?</string>
+    <string name="router_error_unexpected">Erreur innattendue</string>
 </resources>

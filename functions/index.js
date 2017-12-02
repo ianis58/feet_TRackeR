@@ -117,6 +117,9 @@ const myTools = {
     //Insert new node and fetch's it's key
     const key = roadGraphSnapShot.ref.push(node).key;
 
+    //Don't forget to compute node's coordinate
+    node.coord = new myTools.vector(node.east, node.north);
+
     //Update local model
     roadGraphData[key] = node;
     
@@ -125,8 +128,8 @@ const myTools = {
   createRoad: function(roadGraphSnapShot, roadGraphData, fromKey, toKey) {
     const fromNode = roadGraphData[fromKey];
     const toNode = roadGraphData[toKey];
-    const fromPos = new myTools.vector(fromNode.east, fromNode.north);
-    const toPos = new myTools.vector(toNode.east, toNode.north);
+    const fromPos = fromNode.coord;
+    const toPos = toNode.coord;
     const delta = toPos.sub(fromPos);
     const distance = delta.length();
     
@@ -156,10 +159,16 @@ const myTools = {
     roadGraphSnapShot.ref.child(fromKey + '/roads/' + toKey).set(road1);
     roadGraphSnapShot.ref.child(toKey + '/roads/' + fromKey).set(road2);
   },
+  
 	processSegment: function(roadGraphSnapShot, roadGraphData, newParamSegment, knownEndPoints) {
     //First pass, find close enough endpoints nodes, if not already know
     const knownOrig = !!knownEndPoints.origNodeKey;
     const knownDest = !!knownEndPoints.destNodeKey;
+    
+    if (knownOrig && knownDest && knownEndPoints.origNodeKey == knownEndPoints.destNodeKey) {
+      //Same origin and destination, we don't want to do anything
+      return;
+    }
     
     if (!knownOrig || !knownDest) {
       var origClosestDistance = knownOrig ? -1 : myTools.distanceTolerance * 2;
@@ -168,7 +177,7 @@ const myTools = {
         const testNode = roadGraphData[nodeKey];
         
         //Make a vector out of node's coordinates
-        const nodeCoord = new myTools.vector(testNode.east, testNode.north);
+        const nodeCoord = testNode.coord;
         
         //Compute distance to origin and destination
         const distToOrig = nodeCoord.distance(newParamSegment.origin);
@@ -215,8 +224,8 @@ const myTools = {
               
               //Compute a segment for the tested road
               const testedParamSegment = myTools.getParametrizedSegmentFromVectors(
-                new myTools.vector(origNode.east, origNode.north),
-                new myTools.vector(destNode.east, destNode.north)
+                origNode.coord,
+                destNode.coord
               );
               
               //Compute an intersection
@@ -231,8 +240,7 @@ const myTools = {
                 for (var interKey in roadGraphData) {
                   const interNode = roadGraphData[interKey];
                   
-                  //Make a vector out of node's coordinates
-                  const nodeCoord = new myTools.vector(interNode.east, interNode.north);
+                  const nodeCoord = interNode.coord;
                   
                   //Compute distance to intersection
                   const distToInter = nodeCoord.distance(intersection);
@@ -250,10 +258,7 @@ const myTools = {
                 //We found a node to use for intersection
                 if (interNodeKey) {
                   //Update intersection coordinate from node
-                  intersection = new myTools.vector(
-                    roadGraphData[interNodeKey].east,
-                    roadGraphData[interNodeKey].north
-                  );
+                  intersection = roadGraphData[interNodeKey].coord;
                 }
                 else {
                   interNodeKey = myTools.createNode(roadGraphSnapShot, roadGraphData, intersection);
@@ -286,10 +291,7 @@ const myTools = {
                 if (knownEndPoints.origNodeKey != interNodeKey) {
                   const paramSegment = myTools.getParametrizedSegmentFromVectors(
                     (knownEndPoints.origNodeKey) ? 
-                      new myTools.vector(
-                        roadGraphData[knownEndPoints.origNodeKey].east, 
-                        roadGraphData[knownEndPoints.origNodeKey].north
-                      )
+                      roadGraphData[knownEndPoints.origNodeKey].coord
                       : newParamSegment.origin,
                     intersection
                   );
@@ -303,10 +305,7 @@ const myTools = {
                   const paramSegment = myTools.getParametrizedSegmentFromVectors(
                     intersection,
                     (knownEndPoints.destNodeKey) ? 
-                      new myTools.vector(
-                        roadGraphData[knownEndPoints.destNodeKey].east, 
-                        roadGraphData[knownEndPoints.destNodeKey].north
-                      )
+                      roadGraphData[knownEndPoints.destNodeKey].coord
                       : newParamSegment.destination
                   );
 
@@ -330,15 +329,25 @@ const myTools = {
     if (!knownEndPoints.destNodeKey) {
       knownEndPoints.destNodeKey = myTools.createNode(roadGraphSnapShot, roadGraphData, newParamSegment.destination);
     }
-    //Doesn't really matter if it already exist, it will be replaced with same values
-    myTools.createRoad(roadGraphSnapShot, roadGraphData, knownEndPoints.origNodeKey, knownEndPoints.destNodeKey);
+    if (knownEndPoints.origNodeKey != knownEndPoints.destNodeKey) {
+      //Doesn't really matter if it already exist, it will be replaced with same values
+      myTools.createRoad(roadGraphSnapShot, roadGraphData, knownEndPoints.origNodeKey, knownEndPoints.destNodeKey);
+    }
 	},
   
+
+  computeGraphCoords: function(graph){
+    for (var nodeKey in graph) {
+      const node = graph[nodeKey];
+      
+      //Make a vector out of node's coordinates
+      node.coord = new myTools.vector(node.east, node.north);
+    }
+  },
   
   aStar: function(graph, fromNode, toNode) {
     //Returns an array of the path (might not lead to "toNode")
     //NOTE: graph[key].coord (vector) must be computed before calling this function
-    //NOTE: only graph[key].enabled = true will be considered
     
     const endNode = graph[toNode];
     
@@ -347,12 +356,10 @@ const myTools = {
     //Nodes are not accepted yet, and distance to start is unknown (infinity) and not connected to anything
     for (var nodeKey in graph) {
       const node = graph[nodeKey];
-      if (node.enabled) {
-        node.accepted = false;
-        node.connectedTo = "";
-        node.distToStart = Infinity;
-        node.distToEnd = node.coord.distance(endNode.coord);
-      }
+      node.accepted = false;
+      node.connectedTo = "";
+      node.distToStart = Infinity;
+      node.distToEnd = node.coord.distance(endNode.coord);
     }
     
     //Except for start node
@@ -364,10 +371,8 @@ const myTools = {
       for (var destKey in startNode.roads) {
         if (destKey != fromNode) {
           const destNode = graph[destKey];
-          if (destNode.enabled) {
-            destNode.distToStart = startNode.roads[destKey].distance;
-            destNode.connectedTo = fromNode;
-          }
+          destNode.distToStart = startNode.roads[destKey].distance;
+          destNode.connectedTo = fromNode;
         }
       }
     }
@@ -378,9 +383,7 @@ const myTools = {
       //Refresh distanceFromStartToEnd for each node
       for (var nodeKey in graph) {
         const node = graph[nodeKey];
-        if (node.enabled) {
-          node.distFromStartToEnd = node.distToStart + node.distToEnd;
-        }
+        node.distFromStartToEnd = node.distToStart + node.distToEnd;
       }
 
       //Select unaccepted node with smallest distFromStartToEnd
@@ -388,12 +391,10 @@ const myTools = {
       var selectedNode = null;
       for (var nodeKey in graph) {
         var node = graph[nodeKey];
-        if (node.enabled) {
-          if (!node.accepted) {
-            if (!selectedNode || node.distFromStartToEnd < selectedNode.distFromStartToEnd) {
-              selectedNodeKey = nodeKey;
-              selectedNode = node;
-            }
+        if (!node.accepted) {
+          if (!selectedNode || node.distFromStartToEnd < selectedNode.distFromStartToEnd) {
+            selectedNodeKey = nodeKey;
+            selectedNode = node;
           }
         }
       }
@@ -421,20 +422,18 @@ const myTools = {
           for (var connectedKey in selectedNode.roads) {
             if (connectedKey != selectedNodeKey) {
               const connectedNode = graph[connectedKey];
-              if (connectedNode.enabled) {
-                const road = selectedNode.roads[connectedKey];
-    
-                const newDistToStart = selectedNode.distToStart + road.distance;
-    
-                if (newDistToStart >= connectedNode.distToStart) {
-                  //We do nothing
-                }
-                else {
-                  //Replace connected distToStart and reject connected node
-                  connectedNode.connectedTo = selectedNodeKey;
-                  connectedNode.distToStart = newDistToStart;
-                  connectedNode.accepted = false;
-                }
+              const road = selectedNode.roads[connectedKey];
+  
+              const newDistToStart = selectedNode.distToStart + road.distance;
+  
+              if (newDistToStart >= connectedNode.distToStart) {
+                //We do nothing
+              }
+              else {
+                //Replace connected distToStart and reject connected node
+                connectedNode.connectedTo = selectedNodeKey;
+                connectedNode.distToStart = newDistToStart;
+                connectedNode.accepted = false;
               }
             }
           }
@@ -504,10 +503,7 @@ const myTools = {
       //Disable untouched nodes
       for (var nodeKey in graph) {
         const node = graph[nodeKey];
-        
-        if (node.touched == 0) {
-          node.enabled = false;
-        }
+        node.enabled = (node.touched != 0);
       }
   },
   
@@ -530,7 +526,8 @@ const myTools = {
       ],
       distance: 0
     };
-    
+
+    //Local function to add coordinate to returned path    
     var lastCoord = fromCoord;
     const addCoord = function(coord, type) {
       //New segment's distance
@@ -549,6 +546,10 @@ const myTools = {
       path.distance += dist;
     };
 
+
+    //Precompute all graph's coordinates
+    myTools.computeGraphCoords(graph);
+
     //Find closest fromNodeKey and toNode
     var closestFromDistance = 0;
     var fromNodeKey = "";
@@ -557,10 +558,6 @@ const myTools = {
     
     for (var nodeKey in graph) {
       const node = graph[nodeKey];
-      
-      //Make a vector out of node's coordinates
-      node.coord = new myTools.vector(node.east, node.north);
-      node.enabled = true;
     
       //Compute distance to fromCoord and toCoord
       const fromDistance = node.coord.distance(fromCoord);
@@ -583,7 +580,15 @@ const myTools = {
       while (currentNodeKey != toNodeKey) {
 
         //Enable only nodes connected to currentNodeKey
-        myTools.enableNodesConnectedToKey(graph, currentNodeKey);      
+        myTools.enableNodesConnectedToKey(graph, currentNodeKey);
+        
+        //Reduce graph for AStar (include only enabled nodes)
+        const aStarGraph = {};
+        for (var nodeKey in graph) {
+          if (graph[nodeKey].enabled) {
+            aStarGraph[nodeKey] = graph[nodeKey];
+          }
+        }     
       
         const currentNode = graph[currentNodeKey];
         //Add currentNodeKey to path, TYPE based on distance from lastCoord
@@ -592,31 +597,28 @@ const myTools = {
 
         //Is it possible to reach 'toNodeKey' directly?'
         var aStarEndKey = toNodeKey;
-        if (graph[toNodeKey].enabled) {
-          //Yes, we will find a path
-          console.log('toNodeKey enabled, we will find a path to it');
-        }
-        else {
+        if (!aStarGraph[toNodeKey]) {
+          //No, toNodeKey is not connected to currentNodeKey
+        
           //Find the enabled node that is closest to our target key
           const endCoord = graph[toNodeKey].coord;
           var closest = Infinity;
-          for (var nodeKey in graph) {
-            var node = graph[nodeKey];
+          for (var nodeKey in aStarGraph) {
+            var node = aStarGraph[nodeKey];
             
-            if (node.enabled) {
-              //Compute distance to endCoord
-              const distance = node.coord.distance(endCoord);
-              if (distance < closest) {
-                closest = distance;
-                aStarEndKey = nodeKey;
-              }
+            //Compute distance to endCoord
+            const distance = node.coord.distance(endCoord);
+            if (distance < closest) {
+              closest = distance;
+              aStarEndKey = nodeKey;
             }
           }
           
         }
+        //else we'll be able to reach toNodeKey in this pass
         
         //Execute A* to find a path (hopefuly) up to 'toNodeKey'
-        var returnedNodes = myTools.aStar(graph, currentNodeKey, aStarEndKey);
+        var returnedNodes = myTools.aStar(aStarGraph, currentNodeKey, aStarEndKey);
 
         currentNodeKey = returnedNodes.length > 0 ? returnedNodes[returnedNodes.length-1] : "";
   
@@ -636,10 +638,15 @@ const myTools = {
           //Considering only disabled nodes closer to end then "currentNode",
           //find the one closer to "currentNodeKey"
           
+          const toNodeCoord = graph[toNodeKey].coord;
+          
           const currentNode = graph[currentNodeKey];
+          currentNode.distToEnd = currentNode.coord.distance(toNodeCoord);
+
           var closestDistToCurrent = Infinity;
           for(var nodeKey in graph) {
             const node = graph[nodeKey];
+            node.distToEnd = node.coord.distance(toNodeCoord);
             
             //Closer to "toNodeKey" then "currentNode" (considere toNodeKey too)
             if (nodeKey == toNodeKey || (!node.enable && node.distToEnd < currentNode.distToEnd)) {
@@ -655,6 +662,7 @@ const myTools = {
         }
         
       } //End of loop
+
 
       //Add final toCoord (closestToDistance computed at the beginning)
       addCoord(toCoord, myTools.typeFromDistance(closestToDistance));
@@ -710,12 +718,15 @@ myTools.vector.prototype = {
     const deltaX = other.x - this.x;
     const deltaY = other.y - this.y;
     return Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+  },
+  toStr: function() {
+    return " ( " + this.x + " , " + this.y + " ) ";
   }
 };
 
 
 // Listens for new segments added to /segments/{segmentUID} and /paths/intersections and /path/roads accordingly
-exports.newSegment = functions.database.ref('/segments/{segmentUID}')
+/*exports.newSegment = functions.database.ref('/segments/{segmentUID}')
     .onCreate(event => {
 		// Grab the current value of what was written to the Realtime Database.
 		const segment = event.data.val();
@@ -734,13 +745,14 @@ exports.newSegment = functions.database.ref('/segments/{segmentUID}')
         if (!graph) {
           graph = {};
         }
+        myTools.computeGraphCoords(graph);
 				myTools.processSegment(roadGraphSnapShot, graph, newParamSegment, {origNodeKey: "", destNodeKey: ""});
 			});
 		}
 		else {
 			return null;
 		}
-});
+});*/
 
 exports.batchProcessAllSegments = functions.https.onRequest((req, res) => {
   const startWith = req.query.startwith;
@@ -777,6 +789,9 @@ exports.batchProcessAllSegments = functions.https.onRequest((req, res) => {
     };
     
     if (segments && roadGraphData) {
+      //Precompute all graph's coordinates
+      myTools.computeGraphCoords(graph);
+
       var started = !startWith;
       for (var segmentKey in segments) {
         //Check elapsed time:

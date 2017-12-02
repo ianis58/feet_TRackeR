@@ -56,6 +56,9 @@ dependencies {
 
     compile 'com.facebook.android:facebook-android-sdk:[4,5)'
 
+    //http(s) / JSON Download library
+    compile 'com.android.volley:volley:1.0.0'
+
     testCompile 'junit:junit:4.12'
 }
 

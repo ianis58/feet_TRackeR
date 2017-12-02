@@ -1,11 +1,12 @@
 package ca.uqac.mobile.feet_tracker.android.activities.router;
 
+import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.res.Configuration;
-import android.graphics.Color;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.os.Bundle;
@@ -14,8 +15,18 @@ import android.support.v7.widget.PopupMenu;
 import android.util.Log;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.Toast;
 
+import com.android.volley.DefaultRetryPolicy;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.Status;
@@ -26,7 +37,6 @@ import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
@@ -34,6 +44,10 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.Locale;
 import java.util.Random;
 
 import ca.uqac.mobile.feet_tracker.R;
@@ -42,6 +56,10 @@ import ca.uqac.mobile.feet_tracker.android.services.location.LocationBinder;
 import ca.uqac.mobile.feet_tracker.android.services.location.LocationListener;
 import ca.uqac.mobile.feet_tracker.model.geo.GeodesicLocation;
 import ca.uqac.mobile.feet_tracker.model.geo.MetricLocation;
+import ca.uqac.mobile.feet_tracker.tools.MTM7Converter;
+import ca.uqac.mobile.feet_tracker.tools.maps.DisplayPath;
+import ca.uqac.mobile.feet_tracker.tools.maps.EnhancedSupportMapFragment;
+import ca.uqac.mobile.feet_tracker.tools.maps.EnhancedSupportPlaceAutocompleteFragment;
 
 public class RouterActivity extends AppCompatActivity implements OnMapReadyCallback {
     private static final String TAG = RouterActivity.class.getSimpleName();
@@ -62,22 +80,32 @@ public class RouterActivity extends AppCompatActivity implements OnMapReadyCallb
     //Google Places API attributes
     private GoogleApiClient mClient;
 
-    //UI attributes
-    SupportMapFragment mapFragment;
+    //UI components
+    LinearLayout placesContainer;
     EnhancedSupportPlaceAutocompleteFragment placesFrom;
     EnhancedSupportPlaceAutocompleteFragment placesTo;
+    EnhancedSupportMapFragment mapFragment;
+    ProgressBar pbWorking;
 
-    //Trajectory attributes
+
+    //Map display attributes
     MarkerOptions markerFrom = new MarkerOptions();
     MarkerOptions markerTo = new MarkerOptions();
     PolylineOptions polyLine = new PolylineOptions();
     CameraUpdate cameraUpdate;
+    MarkerOptions currentPosMarkerOptions = new MarkerOptions();
+    Marker currentPosMarker;
+    DisplayPath displayPath;
 
+    //Selected coordinates
     LatLng fromPos;
     LatLng toPos;
 
-    MarkerOptions currentPosMarkerOptions = new MarkerOptions();
-    Marker currentPosMarker;
+    final GeodesicLocation pathGeodesic = new GeodesicLocation();
+    final MetricLocation pathMetricFrom = new MetricLocation();
+    final MetricLocation pathMetricTo = new MetricLocation();
+
+    RequestQueue pathRequestQueue;
 
     private void initFirstMapLocation(LatLng initalLatLng) {
         if (mLastKnownPos == null && initalLatLng != null) {
@@ -171,12 +199,12 @@ public class RouterActivity extends AppCompatActivity implements OnMapReadyCallb
                             case R.id.router_from:
                                 fromPos = latLng;
                                 placesFrom.setLatLng(latLng);
-                                refreshMap();
+                                pointsChanged();
                                 break;
                             case R.id.router_to:
                                 toPos = latLng;
                                 placesTo.setLatLng(latLng);
-                                refreshMap();
+                                pointsChanged();
                                 break;
                         }
                         return false;
@@ -207,15 +235,133 @@ public class RouterActivity extends AppCompatActivity implements OnMapReadyCallb
         return new LatLng(randomLat, randomLon);
     }
 
+    private void setWorkingState(boolean working) {
+        if (placesFrom != null) {
+            placesFrom.setEnabled(!working);
+        }
+        if (placesTo != null) {
+            placesTo.setEnabled(!working);
+        }
+        if (mMap != null) {
+            mMap.getUiSettings().setAllGesturesEnabled(!working);
+        }
+        if (pbWorking != null) {
+            pbWorking.setVisibility(working ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    private void pointsChanged() {
+        displayPath = null;
+        if (fromPos != null && toPos != null) {
+            fetchPath(fromPos, toPos);
+        }
+        refreshMap();
+    }
+
+    private void fetchPath(final LatLng from, final LatLng to) {
+        //Convert LatLng coordinate to metric coordinate, since that's what findOptimalPath function use
+        pathGeodesic.setLatitude(from.latitude);
+        pathGeodesic.setLongitude(from.longitude);
+        MTM7Converter.geodesicToMetric(pathGeodesic, pathMetricFrom);
+        pathGeodesic.setLatitude(to.latitude);
+        pathGeodesic.setLongitude(to.longitude);
+        MTM7Converter.geodesicToMetric(pathGeodesic, pathMetricTo);
+
+        //Construct request URL
+        String baseUrl = "https://us-central1-feet-tracker.cloudfunctions.net/findOptimalPath";
+        //String baseUrl = "http://192.168.1.215/feet-tracker/us-central1/findOptimalPath";
+        String url = String.format(
+                Locale.US,
+                "%s?fromEast=%.2f&fromNorth=%.2f&toEast=%.2f&toNorth=%.2f",
+                baseUrl,
+                pathMetricFrom.getEast(), pathMetricFrom.getNorth(),
+                pathMetricTo.getEast(), pathMetricTo.getNorth()
+        );
+
+        final JSONObject requestJSON = new JSONObject();
+        try {
+            requestJSON.accumulate("fromEast", pathMetricFrom.getEast());
+            requestJSON.accumulate("fromNorth", pathMetricFrom.getNorth());
+            requestJSON.accumulate("toEast", pathMetricTo.getEast());
+            requestJSON.accumulate("toNorth", pathMetricTo.getNorth());
+
+            /*Test data
+            requestJSON.accumulate("fromEast", 252641.4829831833);
+            requestJSON.accumulate("fromNorth", 5363832.887026333);
+            requestJSON.accumulate("toEast", 250243.40521142152);
+            requestJSON.accumulate("toNorth", 5363948.791111185);
+            */
+        }
+        catch (JSONException e) {
+            Log.e(TAG, "Error constructing requestJSON in fetchPath", e);
+            Toast.makeText(this, R.string.router_error_unexpected, Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        //Enter "Working" state
+        setWorkingState(true);
+
+        //Do the request
+        JsonObjectRequest jsObjRequest = new JsonObjectRequest(
+                Request.Method.POST,
+                baseUrl,
+                requestJSON,
+                new Response.Listener<JSONObject>() {
+
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        //Construct DisplayPath
+                        displayPath = new DisplayPath(response);
+
+                        //And refresh map
+                        refreshMap();
+
+                        //Not working anymore
+                        setWorkingState(false);
+                    }
+                },
+                new Response.ErrorListener() {
+
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.e(TAG, "Error fetching path", error);
+
+                        //Not working anymore
+                        setWorkingState(false);
+
+                        //Tell the user an error occured and ask if he wants to retry
+                        new AlertDialog.Builder(RouterActivity.this)
+                                .setMessage(R.string.router_error_fetch_path_title)
+                                .setMessage(R.string.router_error_fetch_path_message)
+                                .setCancelable(true)
+                                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        fetchPath(from, to);
+                                    }
+                                })
+                                .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        //Doing nothing more
+                                    }
+                                })
+                                .create()
+                                .show();
+                    }
+                }
+        );
+        jsObjRequest.setRetryPolicy(new DefaultRetryPolicy(
+                60000, //Allow up to a 3  secs before timing out
+                0,  //Do not retry by itself, let the user decide
+                DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
+        ));
+
+        // Add download to request queue
+        pathRequestQueue.add(jsObjRequest);
+    }
+
     private void refreshMap() {
-        /*
-        // Add a marker in Sydney and move the camera
-        LatLng sydney = new LatLng(-34, 151);
-        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
-        */
-
         if (mMap != null) {
             mMap.clear();
 
@@ -243,36 +389,22 @@ public class RouterActivity extends AppCompatActivity implements OnMapReadyCallb
             }
 
             LatLngBounds bounds = null;
-            if (fromPos != null && toPos != null) {
-                polyLine = new PolylineOptions();
-                polyLine
-                        .add(fromPos)
-                        .color(Color.BLUE)
-                        .geodesic(false)
-                        .clickable(false)
-                ;
-
+            if (displayPath != null) {
                 LatLngBounds.Builder boundsBuilder = LatLngBounds.builder();
-                boundsBuilder
+                displayPath.includeInBounds(boundsBuilder);
+                bounds = boundsBuilder.build();
+
+                for (DisplayPath.Segment segment : displayPath.getSegments()) {
+                    mMap.addPolyline(segment.getPolyline());
+                }
+            }
+            else if (fromPos != null && toPos != null) {
+                LatLngBounds.Builder boundsBuilder = LatLngBounds.builder();
+                bounds = boundsBuilder
                         .include(fromPos)
                         .include(toPos)
+                        .build()
                 ;
-
-                //Add a few pseudo random points
-                final int segmentCount = 4;
-                final double segmentWidth = 1.0 / (segmentCount);
-                for (int i = 1; i < segmentCount; i++) {
-                    LatLng latLng = getPseudoRandomLatLngAlongPath(i * segmentWidth, segmentWidth/2);
-
-                    polyLine.add(latLng);
-                    boundsBuilder.include(latLng);
-                }
-
-                //Add target path
-                polyLine.add(toPos);
-                mMap.addPolyline(polyLine);
-
-                bounds = boundsBuilder.build();
             }
 
             if (fromPos != null && toPos != null) {
@@ -299,32 +431,89 @@ public class RouterActivity extends AppCompatActivity implements OnMapReadyCallb
 
     }
 
+    private void findUIComponents() {
+        mapFragment = (EnhancedSupportMapFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.map);
+
+        placesContainer = (LinearLayout) findViewById(R.id.router_places);
+        placesFrom = (EnhancedSupportPlaceAutocompleteFragment) getSupportFragmentManager().findFragmentById(R.id.places_fragment_from);
+        placesTo = (EnhancedSupportPlaceAutocompleteFragment) getSupportFragmentManager().findFragmentById(R.id.places_fragment_to);
+
+        pbWorking = (ProgressBar) findViewById(R.id.working);
+    }
+
+    private void initUIComponents() {
+        mapFragment.getMapAsync(this);
+        placesFrom.setHint(getResources().getString(R.string.router_from_hint));
+        placesFrom.setOnPlaceSelectedListener(new PlaceSelectionListener() {
+            @Override
+            public void onPlaceSelected(Place place) {
+                fromPos = place.getLatLng();
+                pointsChanged();
+            }
+
+            @Override
+            public void onError(Status status) {
+                fromPos = null;
+            }
+        });
+        placesFrom.setOnClearListener(new EnhancedSupportPlaceAutocompleteFragment.OnClearListener() {
+            @Override
+            public void onClear() {
+                fromPos = null;
+                pointsChanged();
+            }
+        });
+
+
+        placesTo.setHint(getResources().getString(R.string.router_to_hint));
+        placesTo.setOnPlaceSelectedListener(new PlaceSelectionListener() {
+            @Override
+            public void onPlaceSelected(Place place) {
+                toPos = place.getLatLng();
+                pointsChanged();
+            }
+
+            @Override
+            public void onError(Status status) {
+                toPos = null;
+            }
+        });
+        placesTo.setOnClearListener(new EnhancedSupportPlaceAutocompleteFragment.OnClearListener() {
+            @Override
+            public void onClear() {
+                toPos = null;
+                pointsChanged();
+            }
+        });
+    }
+
+    private void updateOrientation(int orientation) {
+        if (placesContainer != null) {
+            /*getResources().getConfiguration().orientation*/
+            placesContainer.setOrientation(
+                    orientation == Configuration.ORIENTATION_PORTRAIT
+                            ? LinearLayout.VERTICAL
+                            : LinearLayout.HORIZONTAL
+            );
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_router);
 
-        final LinearLayout placesContainer = (LinearLayout) findViewById(R.id.router_places);
-        if (placesContainer != null) {
-            placesContainer.setOrientation(
-                getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT
-                        ? LinearLayout.VERTICAL
-                        : LinearLayout.HORIZONTAL
-            );
-        }
+        findUIComponents();
+        initUIComponents();
+
+        pathRequestQueue = Volley.newRequestQueue(this);
 
         mMap = null;
         fromPos = null;
         toPos = null;
 
         initializeTracker();
-
-        //Google map initialization
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
-
-        mapFragment.getMapAsync(this);
 
         //Google Places initialization
         GoogleApiClient.OnConnectionFailedListener placesFailedListener = new GoogleApiClient.OnConnectionFailedListener() {
@@ -340,50 +529,12 @@ public class RouterActivity extends AppCompatActivity implements OnMapReadyCallb
                 .enableAutoManage(this, placesFailedListener)
                 .build();
 
-        placesFrom = (EnhancedSupportPlaceAutocompleteFragment) getSupportFragmentManager().findFragmentById(R.id.places_fragment_from);
-        placesFrom.setHint(getResources().getString(R.string.router_from_hint));
-        placesFrom.setOnPlaceSelectedListener(new PlaceSelectionListener() {
-            @Override
-            public void onPlaceSelected(Place place) {
-                fromPos = place.getLatLng();
-                refreshMap();
-            }
+    }
 
-            @Override
-            public void onError(Status status) {
-                fromPos = null;
-            }
-        });
-        placesFrom.setOnClearListener(new EnhancedSupportPlaceAutocompleteFragment.OnClearListener() {
-            @Override
-            public void onClear() {
-                fromPos = null;
-                refreshMap();
-            }
-        });
-
-
-        placesTo = (EnhancedSupportPlaceAutocompleteFragment) getSupportFragmentManager().findFragmentById(R.id.places_fragment_to);
-        placesTo.setHint(getResources().getString(R.string.router_to_hint));
-        placesTo.setOnPlaceSelectedListener(new PlaceSelectionListener() {
-            @Override
-            public void onPlaceSelected(Place place) {
-                toPos = place.getLatLng();
-                refreshMap();
-            }
-
-            @Override
-            public void onError(Status status) {
-                toPos = null;
-            }
-        });
-        placesTo.setOnClearListener(new EnhancedSupportPlaceAutocompleteFragment.OnClearListener() {
-            @Override
-            public void onClear() {
-                toPos = null;
-                refreshMap();
-            }
-        });
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        updateOrientation(newConfig.orientation);
+        super.onConfigurationChanged(newConfig);
     }
 
     @Override

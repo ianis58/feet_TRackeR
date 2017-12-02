@@ -1,4 +1,4 @@
-package ca.uqac.mobile.feet_tracker.android.activities.router;
+package ca.uqac.mobile.feet_tracker.tools.maps;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -19,6 +19,7 @@ public class EnhancedSupportPlaceAutocompleteFragment extends SupportPlaceAutoco
         void onClear();
     }
 
+    private View searchButton;
     private View clearButton;
     private EditText searchInput;
 
@@ -36,10 +37,17 @@ public class EnhancedSupportPlaceAutocompleteFragment extends SupportPlaceAutoco
         searchInput.setText(String.format("%.6f, %.6f", latLng.latitude, latLng.longitude));
     }
 
+    public void setEnabled(boolean enabled) {
+        searchButton.setEnabled(enabled);
+        searchInput.setEnabled(enabled);
+        clearButton.setEnabled(enabled);
+    }
+
     @Override
     public View onCreateView(LayoutInflater layoutInflater, ViewGroup viewGroup, Bundle bundle) {
         final View view = super.onCreateView(layoutInflater, viewGroup, bundle);
 
+        searchButton = view.findViewById(com.google.android.gms.R.id.place_autocomplete_search_button);
         clearButton = view.findViewById(com.google.android.gms.R.id.place_autocomplete_clear_button);
         searchInput = (EditText) view.findViewById(com.google.android.gms.R.id.place_autocomplete_search_input);
 

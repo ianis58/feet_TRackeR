@@ -31,10 +31,12 @@
     <Button
         android:id="@+id/btnStartRecordNewTrack"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
+        android:layout_marginBottom="20sp"
         android:layout_marginEnd="20sp"
         android:layout_marginStart="20sp"
         android:layout_marginTop="30sp"
+        android:layout_weight="1"
         android:text="Démarrer l'enregistrement" />
 
     <Button
@@ -44,7 +46,8 @@
         android:layout_marginEnd="20sp"
         android:layout_marginStart="20sp"
         android:layout_marginTop="30sp"
-        android:text="Terminer l'enregistrement" />
+        android:text="Terminer l'enregistrement"
+        android:visibility="gone" />
 
     <TextView
         android:id="@+id/tvSamplingFrequencyLabel"
@@ -64,6 +67,6 @@
         android:layout_marginRight="60sp"
         android:layout_marginTop="20sp"
         android:max="9"
-        android:progress="6" />
+        android:progress="2" />
 
 </LinearLayout>
