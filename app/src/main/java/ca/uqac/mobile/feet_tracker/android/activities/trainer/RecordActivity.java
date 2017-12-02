@@ -153,9 +153,11 @@ public class RecordActivity extends AppCompatActivity {
                 //Starting duration: 0
                 newTrack.child("duration").setValue(0);
                 //Location list container
-                newTrack.child("locations");
+                newTrack.child("segments");
                 //Default track title
                 newTrack.child("title").setValue(String.format("Parcours du %s", formatted));
+                //Date
+                newTrack.child("date").setValue(System.currentTimeMillis());
 
                 startTrackRecordingService();
             }

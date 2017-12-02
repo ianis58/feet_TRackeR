@@ -113,10 +113,7 @@ public class TrackAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
                     TimeUnit.SECONDS.toSeconds(track.getDuration()) % TimeUnit.MINUTES.toSeconds(1));
 
             duration.setText(trackTimeString);
-            Date trackDate = track.getDate();
-            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-            SimpleDateFormat sdf2 = new SimpleDateFormat("HH:mm");
-            date.setText("le "+sdf.format(trackDate)+" à "+sdf2.format(trackDate));
+            date.setText(track.getStringDate());
 
         }
     }
