@@ -1,5 +1,7 @@
 package ca.uqac.mobile.feet_tracker.model.geo;
 
+import com.google.firebase.database.Exclude;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -72,9 +74,18 @@ public class Track {
         return new Date((this.date == null) ? 0 : this.date);
     }
 
+    @Exclude
+    public Long getLongDate() {
+        return date;
+    }
+
+    public void setDate(Long date) {
+        this.date = date;
+    }
+
     public String getStringDate() {
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
         SimpleDateFormat sdf2 = new SimpleDateFormat("HH:mm");
-        return "le " + sdf.format(date) + " à " + sdf2.format(date);
+        return "le " + sdf.format(getDate()) + " à " + sdf2.format(getDate());
     }
 }

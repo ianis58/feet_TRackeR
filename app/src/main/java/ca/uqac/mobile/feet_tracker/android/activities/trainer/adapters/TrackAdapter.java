@@ -79,6 +79,7 @@ public class TrackAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
                     if (t.getUid().equals(track.getUid())) {
                         t.setDuration(track.getDuration());
                         t.setTitle(track.getTitle());
+                        t.setDate(track.getLongDate());
 
                         notifyDataSetChanged();
                         return;
