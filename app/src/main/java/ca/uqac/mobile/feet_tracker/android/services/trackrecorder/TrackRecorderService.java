@@ -31,7 +31,7 @@ public class TrackRecorderService extends LocationBasedService {
     private static final double MIN_INVALID_SPEED = 500.0;
 
     private static final String TAG = TrackRecorderService.class.getSimpleName();
-    private static final float DEFAULT_INTERVAL_SECS = 10.0f;
+    private static final float DEFAULT_INTERVAL_SECS = 2.0f;
 
     private final TrackRecorderBinder mBinder = new TrackRecorderBinder(this);
 
@@ -100,40 +100,18 @@ public class TrackRecorderService extends LocationBasedService {
                 //Compute speed in km/h (NOTE: deltaLocation is in meters and deltaTime is in millis)
                 final double speed = (deltaLocation / 1000) / (deltaTime / 1000 / 60 / 60);
 
-                //Should we log segment?
-                if (speed > MIN_INVALID_SPEED) {
-                    Log.d(TAG, String.format("Invalid speed detected: %.2f km/h", speed));
-                    return; //We don't want to backup location
+                //Acceptable speed, update segment
+                segment.setOrigin(lastLocation);
+                segment.setDestination(newLocation);
+                segment.setSpeed(speed);
+                if (firebaseUser != null) {
+                    segment.setUserID(firebaseUser.getUid());
+                } else {
+                    segment.setUserID("");
                 }
-                if (speed < Segment.MIN_WALK_SPEED && !LOG_TOO_SLOW) {
-                    if (SHOW_TOASTS) {
-                        Toast.makeText(this, String.format("TrackRecorderService found a %.2f meters segment at %.2f km/h (too low)", deltaLocation, speed), Toast.LENGTH_LONG).show();
-                    }
-                    Log.d(TAG, String.format("Speed too low: %.2f km/h (minimum: %.2f km/h)", speed, Segment.MIN_WALK_SPEED));
-                }
-                else if (speed > Segment.MAX_VEHICULE_SPEED && !LOG_TOO_FAST) {
-                    if (SHOW_TOASTS) {
-                        Toast.makeText(this, String.format("TrackRecorderService found a %.2f meters segment at %.2f km/h (too fast)", deltaLocation, speed), Toast.LENGTH_LONG).show();
-                    }
-                    Log.d(TAG, String.format("Speed too fast: %.2f km/h (maximum: %.2f km/h)", speed, Segment.MAX_VEHICULE_SPEED));
-                }
-                else {
-                    if (SHOW_TOASTS) {
-                        Toast.makeText(this, String.format("TrackRecorderService found a %.2f meters segment at %.2f km/h (acceptable)", deltaLocation, speed), Toast.LENGTH_LONG).show();
-                    }
-                    //Acceptable speed, update segment
-                    segment.setOrigin(lastLocation);
-                    segment.setDestination(newLocation);
-                    segment.setSpeed(speed);
-                    if (firebaseUser != null) {
-                        segment.setUserID(firebaseUser.getUid());
-                    } else {
-                        segment.setUserID("");
-                    }
 
-                    //And add it to database
-                    curTrackRef.child("segments").push().setValue(segment);
-                }
+                //And add it to database
+                curTrackRef.child("segments").push().setValue(segment);
             }
             else {
                 //Abnormal situation, let's log it

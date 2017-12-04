@@ -66,6 +66,7 @@ public class TrackStatsActivity extends AppCompatActivity implements OnMapReadyC
     FirebaseAuth.AuthStateListener authStateListener;
     FirebaseUser firebaseUser;
 
+    private SupportMapFragment mapFragment;
     private GoogleMap mMap;
 
     @Override
@@ -109,7 +110,7 @@ public class TrackStatsActivity extends AppCompatActivity implements OnMapReadyC
         speeds = new ArrayList<>();
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+        mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.mapTrack);
         mapFragment.getMapAsync(this);
 
@@ -179,8 +180,16 @@ public class TrackStatsActivity extends AppCompatActivity implements OnMapReadyC
 
     @Override
     public boolean onSupportNavigateUp() {
-        onBackPressed();
-        return true;
+        saveTrackAndClose();
+        //onBackPressed();
+        return false;
+    }
+
+    @Override
+    public boolean onNavigateUp() {
+        saveTrackAndClose();
+        //onBackPressed();
+        return false;
     }
 
     private void fetchTrackData() {
@@ -283,22 +292,29 @@ public class TrackStatsActivity extends AppCompatActivity implements OnMapReadyC
                     mMap.addPolyline(polylineOptions);
                 }
 
-                mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), 50));
+                if(dataSnapshot.hasChildren()){
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), 50));
 
-                //computing harmonic mean of all segments speeds in order to show track mean speed
-                int numerateur = speeds.size();//n
-                double denominateur = 0.0;
-                for(Double speed : speeds){
-                    if(speed != 0) {
-                        denominateur += 1 / speed;
+                    //computing harmonic mean of all segments speeds in order to show track mean speed
+                    int numerateur = speeds.size();//n
+                    double denominateur = 0.0;
+                    for(Double speed : speeds){
+                        if(speed != 0) {
+                            denominateur += 1 / speed;
+                        }
                     }
+                    double harmonicMean = (double)numerateur / denominateur;
+
+                    double scale = Math.pow(10, 1);//1 decimal only
+                    harmonicMean = Math.round(harmonicMean * scale) / scale;
+
+                    tvTrackSpeed.setText(harmonicMean + "km/h");
                 }
-                double harmonicMean = (double)numerateur / denominateur;
+                else{
+                    tvTrackSpeed.setText("aucun déplacement enregistré, pas de vitesse ni de carte");
+                    mapFragment.getView().setVisibility(View.GONE);
+                }
 
-                double scale = Math.pow(10, 1);//1 decimal only
-                harmonicMean = Math.round(harmonicMean * scale) / scale;
-
-                tvTrackSpeed.setText(harmonicMean + "km/h");
             }
 
             @Override

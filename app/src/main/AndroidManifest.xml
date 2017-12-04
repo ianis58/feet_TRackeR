@@ -70,6 +70,7 @@
         </activity>
         <activity
             android:name=".android.activities.trainer.TrainerActivity"
+            android:screenOrientation="portrait"
             android:label="@string/trainer_activity_title">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
@@ -84,6 +85,7 @@
         </activity>
         <activity
             android:name=".android.activities.trainer.RecordActivity"
+            android:screenOrientation="portrait"
             android:label="@string/record_activity_title" />
         <activity
             android:name=".android.activities.login.LoginActivity"
@@ -111,6 +113,7 @@
         </activity>
         <activity
             android:name=".android.activities.trainer.TrackStatsActivity"
+            android:screenOrientation="portrait"
             android:label="@string/new_track_stats_activity_title" />
         <activity
             android:name=".android.activities.devtools.segmentviewer.SegmentViewerActivity"
