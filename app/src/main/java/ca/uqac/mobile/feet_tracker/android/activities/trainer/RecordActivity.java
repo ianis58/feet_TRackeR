@@ -142,7 +142,7 @@ public class RecordActivity extends AppCompatActivity {
 
                 //Find "now" formatted date
                 Date today = new Date();
-                SimpleDateFormat formatYMD = new SimpleDateFormat("YYYY-MM-dd HH:mm", Locale.US);
+                SimpleDateFormat formatYMD = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US);
                 String formatted = formatYMD.format(today);
 
                 //Create a new track
