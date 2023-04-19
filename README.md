@@ -18,9 +18,9 @@ Grâce à cela, nous serons en mesure de proposer une application GPS performant
 [Dossier partagé Google Drive](https://drive.google.com/drive/folders/0B6cTbaFxcgwrUjVQVm1aNWdPdFU)
 
 ### Membres de l'équipe
-Tremblay Sébastien
+metal125
 
-Ragueneau Yann Klemens
+YannKlemens
 
-Rieuf Ianis
+ianis58
 
